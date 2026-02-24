@@ -1,0 +1,25 @@
+{
+  "name": "kwiddex-api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev:api": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "gcp-build": "npm run build",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.2",
+    "pdf-lib": "^1.17.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.1",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": "20.x"
+  }
+}

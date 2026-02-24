@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+.env.local
+__pycache__/
+*.pyc
+*.pt
+*.pth
+backend/keys/kwiddex_private.pem
+backend/users.json
+backend/certificate_store.json
+.DS_Store
+.vscode/
+.idea/
