@@ -1,3 +1,10 @@
+The purpose of this repository is to test the integration of Kwiddex. From the following repositories:
+
+CNN Model/FastAPI backend: https://github.com/brunoviera0/Kwiddex-CNN-Model
+
+Express Server/Frontend: https://github.com/Kwiddex/kwiddex
+
+
 2/26/26
 
 Server Architecture
