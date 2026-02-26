@@ -28,7 +28,7 @@ CNN inferences and returns classification + stats. Express maps the
 response into the shape the frontend expects (score, reasons,
 flags, suggestions, subscores, confidence).
 
-***Response shape needs to be changed***
+***Response shape was changed to fit existing frontend, will be changed back to (score (%), Confidence Interval (CI))***
 
 
 
