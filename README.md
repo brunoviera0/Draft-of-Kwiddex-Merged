@@ -1,14 +1,19 @@
 2/26/26
 
 Server Architecture
+-------------------
 
 Express BFF (port 3001) sits between the frontend and FastAPI (port 8000).
 Express proxies auth and scoring requests to FastAPI, verifies JWTs locally,
 and handles PDF metadata extraction on its own.
 
+
+
 Auth flow: Frontend sends {email, password} to Express. Express maps email
 to username and forwards to FastAPI /register or /login. FastAPI issues a
 JWT (HS256). Express verifies that JWT using the shared KWX_JWT_SECRET.
+
+
 
 Scoring flow: Frontend uploads a file to Express /api/physical/score.
 Express forwards it to FastAPI /monte_carlo. FastAPI runs 30 augmented
