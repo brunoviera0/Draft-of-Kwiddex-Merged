@@ -1,0 +1,167 @@
+:root {
+  --motion-duration-fast: 120ms;
+  --motion-duration-medium: 220ms;
+  --motion-duration-long: 320ms;
+  --motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --motion-easing-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --motion-hover-raise: -2px;
+  --motion-hover-raise-strong: -4px;
+  --motion-press-scale: 0.97;
+  --motion-focus-ring-width: 4px;
+  --motion-focus-ring-color: hsl(var(--ring) / 0.4);
+  --motion-button-shadow-rest: 0 2px 6px rgba(15, 23, 42, 0.12), 0 1px 2px rgba(15, 23, 42, 0.08);
+  --motion-button-shadow-hover: 0 12px 24px rgba(15, 23, 42, 0.18), 0 4px 8px rgba(15, 23, 42, 0.12);
+  --motion-button-shadow-focus: 0 0 0 var(--motion-focus-ring-width) var(--motion-focus-ring-color);
+  --motion-secondary-shadow-rest: 0 1px 3px rgba(15, 23, 42, 0.12), 0 1px 2px rgba(15, 23, 42, 0.08);
+  --motion-secondary-shadow-hover: 0 6px 16px rgba(15, 23, 42, 0.16), 0 2px 6px rgba(15, 23, 42, 0.12);
+  --motion-surface-shadow-rest: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --motion-surface-shadow-hover: 0 16px 40px rgba(15, 23, 42, 0.12);
+  --motion-ripple-color: hsl(var(--primary) / 0.32);
+  --motion-ripple-duration: 460ms;
+}
+
+:is(
+    .motion-interactive,
+    :where(button):not(.motion-static),
+    :where([role="button"]):not(.motion-static)
+  ) {
+  --motion-raise-amount: var(--motion-hover-raise);
+  --motion-press-amount: var(--motion-press-scale);
+  position: relative;
+  transform: translate3d(0, 0, 0) scale(1);
+  transition: transform var(--motion-duration-medium) var(--motion-easing-decelerate),
+    box-shadow var(--motion-duration-medium) var(--motion-easing-decelerate),
+    opacity var(--motion-duration-medium) var(--motion-easing-decelerate);
+  will-change: transform, box-shadow, opacity;
+  outline: none;
+}
+
+:is(
+    .motion-interactive,
+    :where(button):not(.motion-static),
+    :where([role="button"]):not(.motion-static)
+  ):hover:not(:disabled):not([aria-disabled="true"]) {
+  transform: translate3d(0, var(--motion-raise-amount), 0) scale(1);
+}
+
+:is(
+    .motion-interactive,
+    :where(button):not(.motion-static),
+    :where([role="button"]):not(.motion-static)
+  ):active:not(:disabled):not([aria-disabled="true"]),
+:is(
+    .motion-interactive,
+    :where(button):not(.motion-static),
+    :where([role="button"]):not(.motion-static)
+  )[data-press="active"] {
+  transform: scale(var(--motion-press-amount));
+  transition-duration: var(--motion-duration-fast);
+  transition-timing-function: var(--motion-easing-accelerate);
+}
+
+.motion-button {
+  --motion-raise-amount: var(--motion-hover-raise);
+  --motion-press-amount: var(--motion-press-scale);
+  box-shadow: var(--motion-button-shadow-rest);
+}
+
+.motion-lift-strong {
+  --motion-raise-amount: var(--motion-hover-raise-strong);
+}
+
+.motion-button[data-variant="secondary"],
+.motion-button[data-variant="outline"] {
+  box-shadow: var(--motion-secondary-shadow-rest);
+}
+
+.motion-button:hover:not(:disabled):not([aria-disabled="true"]) {
+  box-shadow: var(--motion-button-shadow-hover);
+}
+
+.motion-button[data-variant="secondary"]:hover:not(:disabled):not([aria-disabled="true"]),
+.motion-button[data-variant="outline"]:hover:not(:disabled):not([aria-disabled="true"]) {
+  box-shadow: var(--motion-secondary-shadow-hover);
+}
+
+.motion-button:focus-visible {
+  transform: translate3d(0, 0, 0) scale(1);
+  box-shadow: var(--motion-button-shadow-hover), var(--motion-button-shadow-focus);
+}
+
+.motion-button[data-variant="secondary"]:focus-visible,
+.motion-button[data-variant="outline"]:focus-visible {
+  box-shadow: var(--motion-secondary-shadow-hover), var(--motion-button-shadow-focus);
+}
+
+.motion-surface {
+  box-shadow: var(--motion-surface-shadow-rest);
+  border-radius: inherit;
+}
+
+.motion-surface:hover {
+  box-shadow: var(--motion-surface-shadow-hover);
+}
+
+.motion-surface:focus-visible {
+  box-shadow: var(--motion-surface-shadow-hover), var(--motion-button-shadow-focus);
+}
+
+[data-ripple] {
+  position: relative;
+  overflow: hidden;
+}
+
+.motion-ripple {
+  position: absolute;
+  pointer-events: none;
+  width: var(--motion-ripple-size, 0px);
+  height: var(--motion-ripple-size, 0px);
+  left: var(--motion-ripple-x, 0px);
+  top: var(--motion-ripple-y, 0px);
+  border-radius: 999px;
+  background: var(--motion-ripple-fill, var(--motion-ripple-color));
+  opacity: 0.35;
+  transform: scale(0);
+  animation: motion-ripple var(--motion-ripple-duration) var(--motion-easing-decelerate) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes motion-ripple {
+  from {
+    transform: scale(0);
+    opacity: 0.4;
+  }
+  to {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(
+      .motion-interactive,
+      :where(button):not(.motion-static),
+      :where([role="button"]):not(.motion-static)
+    ) {
+    transition: none;
+  }
+
+  :is(
+      .motion-interactive,
+      :where(button):not(.motion-static),
+      :where([role="button"]):not(.motion-static)
+    ):hover:not(:disabled):not([aria-disabled="true"]),
+  :is(
+      .motion-interactive,
+      :where(button):not(.motion-static),
+      :where([role="button"]):not(.motion-static)
+    ):active:not(:disabled):not([aria-disabled="true"]) {
+    transform: translate3d(0, 0, 0) scale(1) !important;
+  }
+
+  .motion-ripple {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}

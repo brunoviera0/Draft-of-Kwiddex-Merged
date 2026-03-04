@@ -1,4 +1,5 @@
 node_modules/
+<<<<<<< HEAD
 dist/
 .env
 .env.local
@@ -12,3 +13,16 @@ backend/certificate_store.json
 .DS_Store
 .vscode/
 .idea/
+=======
+.next/
+dist/
+out/
+coverage/
+.vercel/
+.turbo/
+.vscode/
+.DS_Store
+*.log
+.env*
+!.env.example
+>>>>>>> 8e3588c (Frontend injection)

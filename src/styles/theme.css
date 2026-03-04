@@ -1,0 +1,165 @@
+:root {
+  --bg: #ffffff;
+  --text: #0B1220;
+  --muted: #5b6474;
+  --card: #f6f8fb;
+  --border: #e5e7eb;
+  --action: #2563eb;
+  --action-contrast: #ffffff;
+  --link: #2563eb;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0B1220;
+  --text: #e8eefc;
+  --muted: #b3bed6;
+  --card: #0f172a;
+  --border: #2a3652;
+  --action: #8ab4ff;
+  --action-contrast: #0B1220;
+  --link: #8ab4ff;
+}
+
+/* GLOBAL defaults so all pages inherit readable colors */
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* common UI surfaces */
+.navbar,
+header,
+footer {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+.card,
+.panel,
+.box {
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+
+/* type + inputs */
+a {
+  color: var(--link);
+}
+
+hr {
+  border-color: var(--border);
+}
+
+input,
+select,
+textarea {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+button,
+.btn {
+  background: var(--action);
+  color: var(--action-contrast);
+  border: 1px solid transparent;
+}
+
+button.btn-secondary,
+.btn-secondary {
+  background: var(--card);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.theme-toggle {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  z-index: 1000;
+  transition: transform 180ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    box-shadow 180ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+.theme-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+.theme-toggle:active {
+  transform: translateY(0) scale(0.98);
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle {
+    transition: none;
+  }
+}
+
+.about-button {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  min-width: 88px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  text-decoration: none;
+  font-weight: 600;
+  z-index: 1000;
+  transition: transform 180ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    box-shadow 180ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.about-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.about-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-button {
+    transition: none;
+  }
+}
+
+.text-base-color {
+  color: var(--text) !important;
+}
+
+.hover\:text-base-color:hover {
+  color: var(--text) !important;
+}
+
+.bg-base {
+  background: var(--bg) !important;
+}
+
+.bg-surface {
+  background: var(--card) !important;
+}
+
+.bg-surface-soft {
+  background: color-mix(in srgb, var(--card) 20%, transparent) !important;
+}
+
+.hover\:bg-surface:hover {
+  background: var(--card) !important;
+}

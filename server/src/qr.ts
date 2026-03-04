@@ -199,6 +199,10 @@ function placeTimingPatterns(
     }
   }
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8e3588c (Frontend injection)
 function placeAlignmentPattern(
   modules: (boolean | null)[][],
   reserved: boolean[][],

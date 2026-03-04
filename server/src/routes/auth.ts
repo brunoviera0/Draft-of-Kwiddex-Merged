@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { Router } from "express"
 import { verifyFastapiToken } from "../auth"
 
@@ -94,3 +95,123 @@ authRouter.get("/me", (req, res) => {
 })
 
 export default authRouter
+=======
+import bcrypt from 'bcrypt';
+import { Router } from 'express';
+import { createAuthToken, verifyAuthToken } from '../auth';
+import { ensureUsersTable, getDbPool } from '../db';
+
+type UserRow = {
+  id: number;
+  email: string;
+  password_hash: string;
+};
+
+const authRouter = Router();
+
+const sanitizeEmail = (value: unknown) => String(value ?? '').trim().toLowerCase();
+
+const publicUser = (user: { id: number; email: string }) => ({
+  id: String(user.id),
+  email: user.email,
+});
+
+const getUserByEmail = async (email: string): Promise<UserRow | null> => {
+  await ensureUsersTable();
+
+  const [rows] = await getDbPool().execute<UserRow[]>(
+    'SELECT id, email, password_hash FROM users WHERE email = ? LIMIT 1;',
+    [email],
+  );
+
+  return rows[0] ?? null;
+};
+
+authRouter.post('/signup', async (req, res) => {
+  const email = sanitizeEmail(req.body?.email);
+  const password = String(req.body?.password ?? '');
+
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required.' });
+  }
+
+  try {
+    await ensureUsersTable();
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    await getDbPool().execute('INSERT INTO users (email, password_hash) VALUES (?, ?);', [email, passwordHash]);
+
+    return res.status(201).json({ ok: true });
+  } catch (error: any) {
+    if (error?.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ error: 'Email already exists.' });
+    }
+
+    console.error('Signup failed:', error);
+    return res.status(500).json({ error: 'Unable to create account right now.' });
+  }
+});
+
+authRouter.post('/login', async (req, res) => {
+  const email = sanitizeEmail(req.body?.email);
+  const password = String(req.body?.password ?? '');
+
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required.' });
+  }
+
+  try {
+    const user = await getUserByEmail(email);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    const matches = await bcrypt.compare(password, user.password_hash);
+    if (!matches) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    const token = createAuthToken({
+      sub: String(user.id),
+      email: user.email,
+      name: null,
+    });
+
+    return res.json({
+      token,
+      user: publicUser(user),
+    });
+  } catch (error) {
+    console.error('Login failed:', error);
+    return res.status(500).json({ error: 'Unable to log in right now.' });
+  }
+});
+
+authRouter.get('/me', async (req, res) => {
+  const authHeader = req.header('authorization') || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+
+  if (!token) {
+    return res.status(401).json({ error: 'Missing access token.' });
+  }
+
+  try {
+    const payload = verifyAuthToken(token);
+    if (!payload) {
+      return res.status(401).json({ error: 'Invalid or expired access token.' });
+    }
+
+    const user = await getUserByEmail(payload.email);
+    if (!user) {
+      return res.status(401).json({ error: 'User no longer exists.' });
+    }
+
+    return res.json({ user: publicUser(user) });
+  } catch (error) {
+    console.error('Auth check failed:', error);
+    return res.status(500).json({ error: 'Unable to validate session.' });
+  }
+});
+
+export default authRouter;
+>>>>>>> 8e3588c (Frontend injection)

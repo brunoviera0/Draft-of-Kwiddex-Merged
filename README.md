@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 The purpose of this repository is to test the integration of Kwiddex. From the following repositories:
 
 CNN Model/FastAPI backend: https://github.com/brunoviera0/Kwiddex-CNN-Model
@@ -119,3 +120,6 @@ Next Week
 upload and scoring, and page navigation.
 
 -Change expected response fields
+=======
+Coming Soon...
+>>>>>>> 8e3588c (Frontend injection)
