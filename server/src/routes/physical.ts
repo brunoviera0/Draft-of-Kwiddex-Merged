@@ -9,7 +9,7 @@ import express, {
 import multer from "multer"
 import { randomUUID } from "node:crypto"
 import { ACTIVE_CNN_MODEL, scoreWithCNN } from "../cnnScorer"
-import type { AiResult } from "../cnnScorer"
+import type { CnnResult } from "../cnnScorer"
 
 const router = Router()
 
@@ -27,9 +27,7 @@ type StoredAnalysis = {
   file: { name: string; mimetype: string; size: number }
   branch: "image" | "pdf"
   verificationCode: string
-  result: AiResult & {
-    elapsedMs: number
-  }
+  result: (CnnResult & { elapsedMs: number }) | (CnnResult & { error?: string; elapsedMs: number })
 }
 
 type ErrorResponsePayload = {
@@ -122,12 +120,8 @@ type FallbackResponseOptions = {
   branch: "image" | "pdf"
   fileInfo: ReturnType<typeof serialiseFile>
   reason: string
-  suggestions?: string[]
-  reasons?: string[]
-  provider?: AiResult["provider"]
+  provider?: CnnResult["provider"]
   model?: string
-  flags?: string[]
-  score?: number
   logLevel?: "info" | "warn" | "error"
   logReason: string
 }
@@ -141,40 +135,31 @@ function respondWithFallback(options: FallbackResponseOptions) {
     branch,
     fileInfo,
     reason,
-    suggestions = [],
-    reasons,
-    provider = "fallback",
-    model = "disabled",
-    flags = ["fallback"],
-    score = 50,
+    provider = "heuristic",
+    model = "unavailable",
     logLevel = "info",
     logReason,
   } = options
 
   const elapsedMs = Date.now() - startedAt
   const analysisId = requestId
-  const verificationCode = requestId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 12).toLowerCase()
 
-  const fallbackResult = normalizeResult({
-    score,
-    reasons: combineUniqueStrings([reason], reasons ?? []),
-    suggestions: combineUniqueStrings(suggestions),
-    flags: combineUniqueStrings(flags, ["fallback"]),
+  const fallbackResult: CnnResult & { error?: string } = {
+    confidence: null as any,
+    confidenceInterval: null as any,
     provider,
     model,
-  })
+    error: reason,
+  }
 
   analysisStore.set(analysisId, {
     analysisId,
     requestId,
     createdAt: Date.now(),
     branch,
-    verificationCode,
+    verificationCode: "",
     file: fileInfo,
-    result: {
-      ...fallbackResult,
-      elapsedMs,
-    },
+    result: { ...fallbackResult, elapsedMs },
   })
 
   logScoreEvent(logLevel, {
@@ -182,10 +167,10 @@ function respondWithFallback(options: FallbackResponseOptions) {
     timestamp,
     analysisId,
     branch,
-    model: fallbackResult.model,
+    model,
     file: fileInfo,
     elapsedMs,
-    provider: fallbackResult.provider,
+    provider,
     reason: logReason,
   })
 
@@ -194,7 +179,6 @@ function respondWithFallback(options: FallbackResponseOptions) {
     requestId,
     analysisId,
     elapsedMs,
-    verificationCode,
   })
 }
 
@@ -256,9 +240,9 @@ router.post("/score", scoreRateLimiter, handleUpload, async (req: Request, res: 
       requestId,
     })
   }
-const scorerEnabled = String(process.env.USE_CNN_SCORER || "true").toLowerCase() === "true"
+
+  const scorerEnabled = String(process.env.USE_CNN_SCORER || "true").toLowerCase() === "true"
   if (!scorerEnabled) {
-    const heuristic = buildHeuristicAssessment(uploadFile, { includeFallbackNotice: false })
     return respondWithFallback({
       res,
       requestId,
@@ -267,10 +251,6 @@ const scorerEnabled = String(process.env.USE_CNN_SCORER || "true").toLowerCase()
       branch,
       fileInfo,
       reason: "CNN scoring disabled (feature flag)",
-      reasons: heuristic.reasons,
-      suggestions: combineUniqueStrings(heuristic.suggestions, ["Set USE_CNN_SCORER=true"]),
-      flags: combineUniqueStrings(heuristic.flags, ["feature-flag-disabled"]),
-      score: heuristic.score,
       provider: "heuristic",
       logReason: "feature-flag-disabled",
       logLevel: "info",
@@ -283,22 +263,17 @@ const scorerEnabled = String(process.env.USE_CNN_SCORER || "true").toLowerCase()
       mimetype: uploadFile.mimetype || "application/octet-stream",
       filename: uploadFile.originalname || "upload",
     })
-    const normalizedResult = normalizeResult(result)
     const elapsedMs = Date.now() - startedAt
     const analysisId = requestId
-    const verificationCode = requestId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 12).toLowerCase()
 
     analysisStore.set(analysisId, {
       analysisId,
       requestId,
       createdAt: Date.now(),
       branch,
-      verificationCode,
+      verificationCode: "",
       file: fileInfo,
-      result: {
-        ...normalizedResult,
-        elapsedMs,
-      },
+      result: { ...result, elapsedMs },
     })
 
     logScoreEvent("info", {
@@ -306,18 +281,17 @@ const scorerEnabled = String(process.env.USE_CNN_SCORER || "true").toLowerCase()
       timestamp,
       analysisId,
       branch,
-      model: normalizedResult.model,
+      model: result.model,
       file: fileInfo,
       elapsedMs,
-      provider: normalizedResult.provider,
+      provider: result.provider,
     })
 
     return res.json({
-      ...normalizedResult,
+      ...result,
       requestId,
       analysisId,
       elapsedMs,
-      verificationCode,
     })
   } catch (error: any) {
     const elapsedMs = Date.now() - startedAt
@@ -336,7 +310,6 @@ const scorerEnabled = String(process.env.USE_CNN_SCORER || "true").toLowerCase()
       message,
     })
 
-    const heuristic = buildHeuristicAssessment(uploadFile, { includeFallbackNotice: true })
     return respondWithFallback({
       res,
       requestId,
@@ -344,23 +317,19 @@ const scorerEnabled = String(process.env.USE_CNN_SCORER || "true").toLowerCase()
       startedAt,
       branch,
       fileInfo,
-      reason: "CNN scoring failed; returning local heuristic assessment.",
-      reasons: heuristic.reasons,
-      suggestions: combineUniqueStrings(heuristic.suggestions, [
-        "Retry scoring once the CNN backend is healthy.",
-        "Ensure FastAPI is running at the configured FASTAPI_URL.",
-      ]),
+      reason: "CNN scoring failed. Please retry or check that FastAPI is running.",
       provider: "heuristic",
       model: ACTIVE_CNN_MODEL,
-      flags: combineUniqueStrings(heuristic.flags, ["cnn-error"]),
-      score: heuristic.score,
       logLevel: "error",
       logReason: "cnn-error",
     })
   }
 })
 
-//Report generation removed:CNN backend does not produce textual analysis for PDF reports.
+
+
+
+//Report generation removed. CNN backend does not produce textual analysis for PDF reports.
 
 function safelyStringify(value: unknown): string {
   if (value === undefined || value === null) return ""
@@ -408,6 +377,7 @@ type HeuristicAssessment = {
 type HeuristicAssessmentOptions = {
   includeFallbackNotice?: boolean
 }
+
 function buildHeuristicAssessment(
   file?: Express.Multer.File | null,
   options: HeuristicAssessmentOptions = {}
@@ -570,7 +540,7 @@ function sanitizeStringArray(value: unknown): string[] {
             pushUnique(stringValue)
           }
         } catch {
-          // ignore non-serialisable objects
+          //ignore non-serialisable objects
         }
       }
 
@@ -589,6 +559,8 @@ function sanitizeStringArray(value: unknown): string[] {
   return output
 }
 
+
+
 function sanitizeSubscoresRecord(value: unknown): Record<string, number> | undefined {
   if (!value || typeof value !== "object") return undefined
   const output: Record<string, number> = {}
@@ -601,31 +573,8 @@ function sanitizeSubscoresRecord(value: unknown): Record<string, number> | undef
   return Object.keys(output).length ? output : undefined
 }
 
-function normalizeResult(result: AiResult): AiResult {
-  const normalized: AiResult = {
-    ...result,
-    score: clampScoreValue(result.score),
-    reasons: sanitizeStringArray(result.reasons),
-    flags: sanitizeStringArray(result.flags),
-    suggestions: sanitizeStringArray(result.suggestions),
-  }
+//normalizeResult removed. CnnResult passes through raw CNN values without interpretation
 
-  const subscores = sanitizeSubscoresRecord(result.subscores)
-  if (subscores) {
-    normalized.subscores = subscores
-  } else {
-    delete normalized.subscores
-  }
-
-  const confidence = clampConfidenceValue(result.confidence)
-  if (confidence !== undefined) {
-    normalized.confidence = confidence
-  } else {
-    delete normalized.confidence
-  }
-
-  return normalized
-}
 function sendJsonError(res: Response, statusCode: number, payload: ErrorResponsePayload) {
   const responseBody: Record<string, unknown> = {
     error: payload.error || "Error",

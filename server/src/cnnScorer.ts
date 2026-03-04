@@ -1,15 +1,18 @@
 import "./env"
 
-export type AiResult = {
-  score: number
-  reasons: string[]
-  flags: string[]
-  suggestions: string[]
-  subscores?: Record<string, number>
-  confidence?: number
-  provider: "cnn" | "fallback" | "heuristic"
+export type CnnResult = {
+  confidence: number                    // 0-1 from CNN softmax
+  confidenceInterval: {
+    lower: number                       // 0-1
+    upper: number                       // 0-1
+  }
+  monteCarloStats?: {
+    numSamples: number
+    agreementRate: number               // 0-1
+    stdDev: number
+  }
+  provider: "cnn" | "heuristic"
   model: string
-  qualitySignals?: { previewDataUrl?: string }
 }
 
 type MonteCarloResponse = {
@@ -51,7 +54,7 @@ type PredictResponse = {
 }
 
 const FASTAPI_BASE = (process.env.FASTAPI_URL || "http://localhost:8000").replace(/\/+$/, "")
-const CNN_MODEL_NAME = "best_real_fake_resnet18"
+const CNN_MODEL_NAME = "resnet18-real-fake"
 const USE_MONTE_CARLO = String(process.env.USE_MONTE_CARLO || "true").toLowerCase() === "true"
 const MC_SAMPLES = Number(process.env.MC_SAMPLES) || 30
 
@@ -61,7 +64,7 @@ export async function scoreWithCNN(opts: {
   buffer: Buffer
   mimetype: string
   filename: string
-}): Promise<AiResult> {
+}): Promise<CnnResult> {
   const endpoint = USE_MONTE_CARLO ? "/monte_carlo" : "/predict"
   const url = new URL(endpoint, FASTAPI_BASE)
 
@@ -100,77 +103,34 @@ export async function scoreWithCNN(opts: {
 
   const data = await response.json()
   return USE_MONTE_CARLO
-    ? mapMonteCarloToAiResult(data as MonteCarloResponse)
-    : mapPredictToAiResult(data as PredictResponse)
+    ? mapMonteCarlo(data as MonteCarloResponse)
+    : mapPredict(data as PredictResponse)
 }
 
-function mapMonteCarloToAiResult(mc: MonteCarloResponse): AiResult {
-  const score = Math.round(mc.confidence * 100)
-  const ci = mc.confidence_interval
-  const stats = mc.monte_carlo_stats
-  const isReal = mc.prediction === 1
-
-  const reasons: string[] = []
-  reasons.push(
-    isReal
-      ? `CNN classified this document as authentic (${mc.prediction_label}) with ${score}% confidence.`
-      : `CNN flagged this document as potentially inauthentic (${mc.prediction_label}) with ${score}% confidence.`
-  )
-
-  if (stats.agreement_rate >= 0.9) {
-    reasons.push(`High consistency: ${Math.round(stats.agreement_rate * 100)}% of ${stats.num_samples} augmented samples agreed.`)
-  } else if (stats.agreement_rate >= 0.7) {
-    reasons.push(`Moderate consistency: ${Math.round(stats.agreement_rate * 100)}% agreement across ${stats.num_samples} samples.`)
-  } else {
-    reasons.push(`Low consistency: only ${Math.round(stats.agreement_rate * 100)}% agreement — result may be unreliable.`)
-  }
-
-  reasons.push(`95% CI: ${Math.round(ci.lower_bound * 100)}%–${Math.round(ci.upper_bound * 100)}%.`)
-
-  const flags: string[] = []
-  if (!isReal) flags.push("classified-fake")
-  if (stats.agreement_rate < 0.7) flags.push("low-agreement")
-  if (mc.confidence < 0.6) flags.push("low-confidence")
-  if (stats.std_dev > 0.15) flags.push("high-variance")
-
-  const suggestions: string[] = []
-  if (mc.confidence < 0.7) suggestions.push("Submit a higher-resolution scan for more reliable classification.")
-  if (stats.agreement_rate < 0.8) suggestions.push("Augmentation results are inconsistent — manual review recommended.")
-  if (!isReal) suggestions.push("Document flagged as potentially fake. Verify against original sources.")
-
+function mapMonteCarlo(mc: MonteCarloResponse): CnnResult {
   return {
-    score,
-    reasons,
-    flags,
-    suggestions,
-    subscores: {
-      authenticity: score,
-      agreement_rate: Math.round(stats.agreement_rate * 100),
-      stability: Math.round(Math.max(0, (1 - stats.std_dev) * 100)),
-      prob_real: Math.round(stats.class_probabilities.real * 100),
-      prob_fake: Math.round(stats.class_probabilities.fake * 100),
-    },
     confidence: mc.confidence,
+    confidenceInterval: {
+      lower: mc.confidence_interval.lower_bound,
+      upper: mc.confidence_interval.upper_bound,
+    },
+    monteCarloStats: {
+      numSamples: mc.monte_carlo_stats.num_samples,
+      agreementRate: mc.monte_carlo_stats.agreement_rate,
+      stdDev: mc.monte_carlo_stats.std_dev,
+    },
     provider: "cnn",
     model: CNN_MODEL_NAME,
   }
 }
 
-function mapPredictToAiResult(pred: PredictResponse): AiResult {
-  const score = Math.round(pred.confidence * 100)
-  const isReal = pred.prediction === 1
-
+function mapPredict(pred: PredictResponse): CnnResult {
   return {
-    score,
-    reasons: [
-      isReal
-        ? `CNN classified this document as authentic (${pred.prediction_label}) with ${score}% confidence.`
-        : `CNN flagged this document as potentially inauthentic (${pred.prediction_label}) with ${score}% confidence.`,
-      `95% CI: ${Math.round(pred.confidence_interval.lower_bound * 100)}%–${Math.round(pred.confidence_interval.upper_bound * 100)}%.`,
-    ],
-    flags: [...(!isReal ? ["classified-fake"] : []), ...(pred.confidence < 0.6 ? ["low-confidence"] : [])],
-    suggestions: pred.confidence < 0.7 ? ["Submit a higher-resolution scan for more reliable results."] : [],
     confidence: pred.confidence,
+    confidenceInterval: {
+      lower: pred.confidence_interval.lower_bound,
+      upper: pred.confidence_interval.upper_bound,
+    },
     provider: "cnn",
     model: CNN_MODEL_NAME,
   }

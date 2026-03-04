@@ -208,6 +208,9 @@ def upload_to_gcs(file_content: bytes, original_filename: str, content_type: str
     gcs_path = f"gs://{BUCKET_NAME}/{blob_name}"
     
     return document_id, gcs_path
+
+
+
 def preprocess_image(image: Image.Image):
     image = image.convert('RGB')
     return transform(image).unsqueeze(0)
@@ -433,6 +436,7 @@ async def predict_monte_carlo(file: UploadFile = File(...), num_samples: int = 3
         raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
 
 
+
 @app.get("/document/{document_id}")
 async def get_document_result(document_id: str):
     try:
@@ -524,20 +528,8 @@ async def certify_document_endpoint(
         predicted_class = int(np.argmax(probabilities_np))
         confidence = float(np.max(probabilities_np))
         
-        #check if document is classified as "real" with sufficient confidence
-        MIN_CONFIDENCE_FOR_CERTIFICATION = 0.70 #min confidence for certification can be adjusted
-        
-        if predicted_class != 1:  # 1 = real, 0 = fake
-            raise HTTPException(
-                status_code=400,
-                detail=f"Document classified as FAKE (confidence: {confidence:.1%}). Cannot certify."
-            )
-        
-        if confidence < MIN_CONFIDENCE_FOR_CERTIFICATION:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Confidence too low for certification ({confidence:.1%}). Minimum required: {MIN_CONFIDENCE_FOR_CERTIFICATION:.1%}"
-            )
+        #CNN confidence is recorded in the certificate but does not gate approval.
+        #Certification requires manual human approval. No auto-reject based on labels.
         
         #create certification (certify_document handles both PDF and image input)
         certified_pdf, certificate = certify_document(
@@ -656,6 +648,9 @@ async def get_certificate_details(certificate_id: str, user: dict = Depends(requ
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lookup error: {str(e)}")
+
+
+
 @app.post("/revoke-certificate/{certificate_id}")
 async def revoke_certificate_endpoint(certificate_id: str, reason: Optional[str] = None):
     
@@ -714,8 +709,6 @@ async def login_user(request: LoginRequest):
     )
 
 
-
-
 @app.get("/health")
 async def health_check():
     return {
@@ -730,3 +723,4 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
