@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 The purpose of this repository is to test the integration of Kwiddex. From the following repositories:
 
 CNN Model/FastAPI backend: https://github.com/brunoviera0/Kwiddex-CNN-Model
@@ -6,120 +5,123 @@ CNN Model/FastAPI backend: https://github.com/brunoviera0/Kwiddex-CNN-Model
 Express Server/Frontend: https://github.com/Kwiddex/kwiddex
 
 
-2/26/26
 
-Server Architecture
--------------------
+## Architecture
 
-Express BFF (port 3001) sits between the frontend and FastAPI (port 8000).
-Express proxies auth and scoring requests to FastAPI, verifies JWTs locally,
-and handles PDF metadata extraction on its own.
+```
+Browser → Vite (React) :5173
+             ↓ /api/*
+         Express BFF :3001
+             ↓
+         FastAPI CNN Backend :8000
+         (PyTorch ResNet18, Monte Carlo inference)
+```
 
+## Project Structure
 
+```
+├── backend/          FastAPI — CNN model, certification, RSA signing
+│   ├── predict.py        Main API (predict, monte_carlo, certify, verify)
+│   ├── certificate_store.py  Certificate persistence
+│   └── best_real_fake_resnet18.pt  Trained model weights
+├── server/           Express BFF - proxies auth + scoring to FastAPI
+│   └── src/
+│       ├── index.ts          Server entry
+│       ├── cnnScorer.ts      FastAPI client (CnnResult type)
+│       ├── routes/
+│       │   ├── physical.ts   /physical/score endpoint
+│       │   └── auth.ts       /auth/* proxy to FastAPI
+│       └── env.ts            Environment config
+├── frontend/         React (Vite) — 6-page SPA
+│   ├── src/pages/
+│   │   ├── Physical.jsx      CNN analysis tool (home page)
+│   │   ├── Verify.jsx        Certificate verification
+│   │   ├── Ocr.jsx           PDF text extraction
+│   │   ├── Sign.jsx          Document certification (auth required)
+│   │   ├── Auth.jsx          Login / signup
+│   │   └── About.jsx         Project info
+│   └── cypress/              E2E tests (navigation, auth, scoring)
+└── tests/            Backend integration tests (bash)
+    └── test_express_fastapi.sh   38 assertions across 7 groups
+```
 
-Auth flow: Frontend sends {email, password} to Express. Express maps email
-to username and forwards to FastAPI /register or /login. FastAPI issues a
-JWT (HS256). Express verifies that JWT using the shared KWX_JWT_SECRET.
+## Pages
 
+| Route | Auth | Description |
+|-------|------|-------------|
+| `/` | No | Upload document → CNN confidence %, 95% CI bounds, Monte Carlo stats |
+| `/verify` | No | Upload signed PDF → verify Kwiddex certificate |
+| `/ocr` | No | Upload PDF → extract text content |
+| `/sign` | Yes | Upload document → create RSA-signed certified PDF |
+| `/auth` | — | Login / signup |
+| `/about` | — | Project information |
 
+## CNN Response (CnnResult)
 
-Scoring flow: Frontend uploads a file to Express /api/physical/score.
-Express forwards it to FastAPI /monte_carlo. FastAPI runs 30 augmented
-CNN inferences and returns classification + stats. Express maps the
-response into the shape the frontend expects (score, reasons,
-flags, suggestions, subscores, confidence).
+The scoring endpoint returns raw model output with no labels or interpretation:
 
-***Response shape was changed to fit existing frontend, will be changed back to (score (%), Confidence Interval (CI))***
+```json
+{
+  "confidence": 0.8028,
+  "confidenceInterval": { "lower": 0.2127, "upper": 0.9587 },
+  "monteCarloStats": { "numSamples": 30, "agreementRate": 0.933, "stdDev": 0.206 },
+  "provider": "cnn",
+  "model": "resnet18-real-fake"
+}
+```
 
+No "real/fake" labels. No score out of 100. Human review required for all decisions.
 
+## Running Locally
 
-Running the Servers
--------------------
+```bash
+# Terminal 1 — FastAPI
+cd backend && uvicorn predict:app --host 0.0.0.0 --port 8000
 
-FastAPI:
-  
-  cd backend
-  
-  export KWX_JWT_SECRET=
-  
-  uvicorn predict:app --host 0.0.0.0 --port 8000
+# Terminal 2 — Express
+cd server && npm install && npm run dev:api
 
-Express:
-  
-  cd server
-  
-  echo "KWX_JWT_SECRET=" > .env
-  
-  echo "FASTAPI_URL=http://localhost:8000" >> .env
-  
-  npm install
-  
-  npm run dev:api
+# Terminal 3 — Frontend
+cd frontend && npm install && npm run dev -- --host 0.0.0.0
+```
 
+Open `http://localhost:5173`
 
-Current Tests
--------------
+## Testing
 
-FastAPI Unit Tests (backend/unit_tests_api.py)
-   
-   56 tests across 13 test classes. Tests FastAPI endpoints in isolation:
-   auth (register, login, token creation/verification), CNN prediction,
-   Monte Carlo inference, PDF certification and verification, certificate
-   storage/lookup/revocation, and input validation. Does not require
-   Express to be running.
+```bash
+# Backend integration (38 tests — health, auth, JWT, CNN scoring, PDF metadata, errors)
+bash tests/test_express_fastapi.sh
 
-   Run:
-     
-     cd backend
-     
-     python -m unittest unit_tests_api.py -v
+# Frontend E2E (requires Cypress + display server)
+cd frontend && npx cypress run
 
-Express-FastAPI Integration Tests (tests/test_express_fastapi.sh)
-   
-   38 assertions across 7 groups. Tests the live connection between
-   Express and FastAPI with both services running. Covers:
+# FastAPI unit tests (56 tests)
+cd backend && python -m pytest unit_tests_api.py
+```
 
-   Health: Both services reachable, model loaded, RSA keys
-   present, Express reports CNN provider.
+## Environment Variables
 
-   Auth Proxy: Signup via Express creates user in FastAPI,
-   login returns correct response shape {token, user: {id, email}},
-   duplicate signup rejected, wrong password rejected, empty fields
-   rejected.
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `FASTAPI_URL` | `http://localhost:8000` | FastAPI backend URL |
+| `KWX_JWT_SECRET` | `` | Shared JWT signing secret |
+| `USE_CNN_SCORER` | `true` | Enable/disable CNN scoring |
+| `USE_MONTE_CARLO` | `true` | Use Monte Carlo inference |
+| `MC_SAMPLES` | `30` | Number of MC augmentation samples |
 
-   JWT Interop: Token from Express login works on /auth/me.
-   Token from direct FastAPI login also works on Express /auth/me
-   (proves shared secret matches). Missing, invalid, and expired
-   tokens all return 401.
+## Recent Changes
 
-   CNN Scoring: FastAPI /predict and /monte_carlo work
-   directly. Express /physical/score full pipeline returns all
-   required fields (score 0-100, reasons, flags, suggestions,
-   confidence, analysisId, subscores). Provider is "cnn".
+**Frontend v2** — While merging frontend, simplified from 12 pages to 6. Physical analysis is the home page. Verify and OCR are public. Sign requires authentication (user ID ties to certificate). Removed: Landing, Home, Dashboard, DocumentationHub, Metadata.
 
-   ***as mentioned above, required fields will be changed to just encompass score and confidence intervals**
+**CnnResult** — Replaced AiResult interpretation layer. Express passes through raw CNN confidence and CI bounds. No labels, no score mapping, no reasons/flags/suggestions. Frontend displays numbers only.
 
-   PDF Metadata: Express /verify extracts sha256 and core
-   metadata from uploaded PDFs.
+**Certification** — Removed auto-reject based on CNN prediction. Certification is now a human-approval workflow. CNN confidence is recorded but does not gate signing.
 
-   WordPress Proxy: Returns 503 gracefully when
-   WORDPRESS_URL is not configured. (awaiting wordpress integration)
+## Next: Security (Week of 3/10)
 
-   Error Handling: Missing file returns 400, unknown routes
-   return 404, non-image files rejected, empty email rejected.
+1. No exposed API keys in code, only API calls via edge functions
+2. Input validation and sanitization for all user inputs
+3. Rate limiting on all API endpoints
+4. Replace custom JWT auth with managed platform (Clerk, Firebase, Supabase, or Auth0 — sponsor's choice)
 
-   Run:
-     
-     bash tests/test_express_fastapi.sh
-
-
-Next Week
----------
-
--Verify front end integration with Cypress end-to-end tests covering auth flows, document
-upload and scoring, and page navigation.
-
--Change expected response fields
-=======
-Coming Soon...
->>>>>>> 8e3588c (Frontend injection)
