@@ -118,7 +118,7 @@ cd backend && python -m pytest unit_tests_api.py
 
 **Certification** — Removed auto-reject based on CNN prediction. Certification is now a human-approval workflow. CNN confidence is recorded but does not gate signing.
 
-## Next: Security (Week of 3/10)
+## Next: Security
 
 1. No exposed API keys in code, only API calls via edge functions
 2. Input validation and sanitization for all user inputs
