@@ -1,10 +1,6 @@
 {
   "name": "kwiddex-api",
-<<<<<<< HEAD
   "version": "1.0.0",
-=======
-  "version": "0.0.0",
->>>>>>> 8e3588c (Frontend injection)
   "private": true,
   "scripts": {
     "dev:api": "tsx watch src/index.ts",
@@ -17,13 +13,6 @@
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "multer": "^1.4.5-lts.2",
-<<<<<<< HEAD
-    "pdf-lib": "^1.17.1"
-  },
-  "devDependencies": {
-    "tsx": "^4.19.1",
-    "typescript": "^5.7.3"
-=======
     "pdf-lib": "^1.17.1",
     "mysql2": "^3.11.5",
     "bcrypt": "npm:bcryptjs@^2.4.3"
@@ -32,7 +21,6 @@
     "tsx": "^4.19.1",
     "typescript": "^5.7.3",
     "@types/bcrypt": "^5.0.2"
->>>>>>> 8e3588c (Frontend injection)
   },
   "engines": {
     "node": "20.x"
