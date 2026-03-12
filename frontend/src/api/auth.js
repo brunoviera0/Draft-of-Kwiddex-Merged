@@ -59,7 +59,7 @@ const request = async (path, { method = 'GET', body, token } = {}) => {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  const endpoint = joinUrl(API_BASE, `/auth${path}`);
+  const endpoint = joinUrl(API_BASE, `/api/auth${path}`);
 
   let response;
 
