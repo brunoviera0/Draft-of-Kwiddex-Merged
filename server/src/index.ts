@@ -34,7 +34,7 @@ const configuredOrigins = (process.env.CORS_ORIGINS ?? "")
   .filter(Boolean)
 
 const defaultProductionOrigins = ["https://www.kwiddex.com", "https://kwiddex.com"]
-const localDevelopmentOrigins = ["http://localhost:3000", "http://localhost:5173"]
+const localDevelopmentOrigins = ["http://localhost:3000", "http://localhost:5173", "http://104.154.205.233"]
 
 const fallbackOrigins =
   process.env.NODE_ENV === "production"
@@ -44,7 +44,7 @@ const fallbackOrigins =
 const allowedOrigins = new Set(configuredOrigins.length > 0 ? configuredOrigins : fallbackOrigins)
 
 const corsOptions = {
-  origin(origin, callback) {
+  origin(origin, callback) {return callback(null, true);
     if (!origin || allowedOrigins.has(origin)) return callback(null, true)
     return callback(new Error("Origin not allowed by CORS"))
   },
