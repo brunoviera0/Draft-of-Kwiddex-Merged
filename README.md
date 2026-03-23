@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 The purpose of this repository is to test the integration of Kwiddex. From the following repositories:
 
 CNN Model/FastAPI backend: https://github.com/brunoviera0/Kwiddex-CNN-Model
@@ -119,7 +118,107 @@ Next Week
 -Verify front end integration with Cypress end-to-end tests covering auth flows, document
 upload and scoring, and page navigation.
 
--Change expected response fields
-=======
-Coming Soon...
->>>>>>> 8e3588c (Frontend injection)
+
+
+3/12/26
+
+Site running on VM IP
+
+Nginx Reverse Proxy
+-------------------
+
+Nginx is responsible for handling all incoming web traffic. It acts as a gateway between the internet and the backend services.
+
+Its main roles include:
+
+  receiving HTTP requests from users
+
+  serving frontend static files
+
+  routing API requests to the backend server
+
+  applying rate limiting
+
+  adding security headers
+
+  managing HTTPS once certificates are installed
+
+  Nginx runs on the public web ports:
+
+    80 (HTTP)
+    443 (HTTPS)
+
+Security Features
+-----------------
+
+
+Reverse Proxy Isolation
+
+All external traffic passes through Nginx before reaching backend services. This prevents direct access to internal services and centralizes request handling.
+
+
+Internal Service Ports
+
+  Backend services run on internal ports and are not exposed to the public internet.
+
+    Express API:
+    127.0.0.1:3001
+
+    FastAPI service:
+    127.0.0.1:8000
+
+Only the reverse proxy can communicate with them.
+
+
+Security Headers
+
+  Nginx includes several HTTP headers that improve browser security.
+
+  These headers help prevent:
+
+    clickjacking
+    MIME type sniffing
+    some cross-site scripting attacks
+
+
+API Rate Limiting
+
+  Rate limiting is enabled in Nginx to prevent excessive requests from a single IP address.
+
+  Current limits allow approximately:
+
+    10 requests per second per IP with a small burst allowance.
+
+
+  This helps protect against:
+
+    brute force attempts
+
+    automated scraping
+
+    basic denial-of-service attacks
+
+
+Domain Configuration
+--------------------
+
+The domain is currently managed through Bluehost. DNS records are being updated to point the domain to the Google Cloud VM’s public IP.
+
+Once propagation completes, users will be able to access the application through the domain instead of the server IP.
+
+
+
+Next Steps After DNS Propagation
+--------------------------------
+
+Once the domain successfully resolves to the server, the next step is to enable HTTPS.
+
+SSL certificates will be installed using Let’s Encrypt and Certbot. This will allow encrypted connections between users and the server.
+
+  After HTTPS is enabled:
+
+    HTTP traffic will redirect to HTTPS
+    
+    user data will be encrypted in transit
+
+    browsers will recognize the site as secure
