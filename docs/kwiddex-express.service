@@ -1,0 +1,13 @@
+[Unit]
+Description=Kwiddex Express
+After=network.target kwiddex-fastapi.service
+
+[Service]
+User=vierbruno03
+WorkingDirectory=/home/vierbruno03/Draft-of-Kwiddex-Merged/server
+ExecStart=/home/vierbruno03/Draft-of-Kwiddex-Merged/server/node_modules/.bin/tsx src/index.ts
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

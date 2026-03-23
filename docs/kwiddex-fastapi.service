@@ -1,0 +1,13 @@
+[Unit]
+Description=Kwiddex FastAPI
+After=network.target
+
+[Service]
+User=vierbruno03
+WorkingDirectory=/home/vierbruno03/Draft-of-Kwiddex-Merged/backend
+ExecStart=/usr/bin/python3 -m uvicorn predict:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

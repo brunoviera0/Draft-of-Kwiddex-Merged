@@ -140,7 +140,7 @@ app.use((error, _req, res, _next) => {
 })
 
 const PORT = Number(process.env.PORT ?? 3001)
-const HOST = "0.0.0.0"
+const HOST = "127.0.0.1"
 const server = createServer(app)
 
 server.listen(PORT, HOST, () => {

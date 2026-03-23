@@ -1,0 +1,13 @@
+[Unit]
+Description=Kwiddex Frontend
+After=network.target
+
+[Service]
+User=vierbruno03
+WorkingDirectory=/home/vierbruno03/Draft-of-Kwiddex-Merged/frontend
+ExecStart=/usr/bin/npx vite --host 127.0.0.1 --port 5173
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
