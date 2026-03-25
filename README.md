@@ -208,17 +208,51 @@ Once propagation completes, users will be able to access the application through
 
 
 
-Next Steps After DNS Propagation
---------------------------------
+Live at: https://kwiddex.com
+----------------------------
 
-Once the domain successfully resolves to the server, the next step is to enable HTTPS.
+Services
 
-SSL certificates will be installed using Let’s Encrypt and Certbot. This will allow encrypted connections between users and the server.
+    Nginx (port 80/443) — reverse proxy, SSL termination, static frontend
 
-  After HTTPS is enabled:
+    Express (port 3001) — API proxy to FastAPI
 
-    HTTP traffic will redirect to HTTPS
+    FastAPI (port 8000) — CNN model, auth, certification
+
+  All services auto-start on boot via systemd.
+
+SSL
+
+    Certificate: Let's Encrypt via certbot
     
-    user data will be encrypted in transit
+    Auto-renews every 60 days (cron job)
+    
+    Expires: June 21, 2026
+    
+    Manual renewal if needed: `sudo certbot renew`
 
-    browsers will recognize the site as secure
+### Useful Commands
+```
+#Check service status
+sudo systemctl status kwiddex-fastapi kwiddex-express kwiddex-frontend
+
+#View logs
+sudo journalctl -u kwiddex-fastapi -f
+sudo journalctl -u kwiddex-express -f
+
+#Restart after code changes
+sudo systemctl restart kwiddex-fastapi kwiddex-express
+
+#Rebuild frontend after changes
+cd frontend && npm run build
+
+#Renew SSL manually
+sudo certbot renew
+
+#Test Nginx config
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+### Config Files
+- Nginx: `/etc/nginx/sites-available/kwiddex` (copy in `docs/nginx-kwiddex.conf`)
+- Systemd: `/etc/systemd/system/kwiddex-*.service` (copies in `docs/`)
