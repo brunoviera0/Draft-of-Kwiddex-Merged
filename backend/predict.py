@@ -668,7 +668,7 @@ async def get_certificate_details(certificate_id: str, user: dict = Depends(requ
 
 
 @app.post("/revoke-certificate/{certificate_id}")
-async def revoke_certificate_endpoint(certificate_id: str, reason: Optional[str] = None):
+async def revoke_certificate_endpoint(certificate_id: str, reason: Optional[str] = None, user: dict = Depends(require_auth)):
     
     #Once revoked, the certificate will fail verification even if the
     #signature is technically valid. Useful if a certification was
@@ -691,8 +691,11 @@ async def revoke_certificate_endpoint(certificate_id: str, reason: Optional[str]
 
 
 
+#DISABLED — Auth0 handles registration
 @app.post("/register", response_model=RegisterResponse)
 async def register_user(request: RegisterRequest):
+    raise HTTPException(status_code=410, detail="Registration is handled by Auth0. This endpoint is disabled.")
+    # Original code below disabled:
     success, result = create_user(
         request.username, 
         request.password,
@@ -706,8 +709,11 @@ async def register_user(request: RegisterRequest):
     )
 
 
+#DISABLED — Auth0 handles login
 @app.post("/login", response_model=LoginResponse)
 async def login_user(request: LoginRequest):
+    raise HTTPException(status_code=410, detail="Login is handled by Auth0. This endpoint is disabled.")
+    # Original code below disabled:
     success, user_id = authenticate(request.username, request.password)
     if success:
         token = create_token(user_id, request.username)

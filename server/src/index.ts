@@ -44,7 +44,7 @@ const fallbackOrigins =
 const allowedOrigins = new Set(configuredOrigins.length > 0 ? configuredOrigins : fallbackOrigins)
 
 const corsOptions = {
-  origin(origin, callback) {return callback(null, true);
+  origin(origin, callback) {
     if (!origin || allowedOrigins.has(origin)) return callback(null, true)
     return callback(new Error("Origin not allowed by CORS"))
   },
