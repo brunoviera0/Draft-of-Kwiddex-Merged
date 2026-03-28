@@ -12,9 +12,11 @@ import pdf2image
 from datetime import datetime
 import numpy as np
 import uuid
+import hashlib
 import imgaug.augmenters as iaa
 from typing import Optional
 from auth import create_user, authenticate, get_user_id, get_profile_by_id, create_token, verify_token
+from auth0_validator import require_auth as auth0_require_auth
 from certification import certify_document, verify_pdf, certify_pdf, is_certified
 import certificate_store
 from fastapi.responses import Response
@@ -33,16 +35,10 @@ app.add_middleware(
 #JWT auth scheme
 security = HTTPBearer(auto_error=False)
 
-#enforce JWT on protected endpoints
+#enforce Auth0 JWT on protected endpoints (RS256)
 async def require_auth(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
-    if credentials is None:
-        raise HTTPException(status_code=401, detail="Authentication required. Provide a Bearer token.")
-    
-    payload = verify_token(credentials.credentials)
-    if payload is None:
-        raise HTTPException(status_code=401, detail="Invalid or expired token.")
-    
-    return payload
+    """Validates Auth0-issued RS256 JWTs. Delegates to auth0_validator."""
+    return await auth0_require_auth(credentials)
 
 
 #gcp
@@ -552,6 +548,10 @@ async def certify_document_endpoint(
             notes=notes
         )
         
+        #store hash of certified PDF for document integrity verification
+        certified_hash = hashlib.sha256(certified_pdf).hexdigest()
+        certificate_store.store_certified_hash(certificate["certificate_id"], certified_hash)
+        
         
         #filename for certified document
         original_name = file.filename.rsplit('.', 1)[0] if '.' in file.filename else file.filename
@@ -605,6 +605,21 @@ async def verify_certificate_endpoint(file: UploadFile = File(...)):
                         result["message"] = "Certificate has been revoked."
                 except Exception:
                     pass  #if Datastore is unreachable, fall back to embedded status
+            
+            #check document integrity against stored certified hash
+            if cert_id:
+                try:
+                    file_hash = hashlib.sha256(content).hexdigest()
+                    intact = certificate_store.check_certified_hash(cert_id, file_hash)
+                    if intact is not None:
+                        result["document_intact"] = intact
+                        if not intact:
+                            result["valid"] = False
+                            result["message"] = "Document has been modified after certification."
+                    else:
+                        result["document_intact"] = None  #legacy cert, no hash stored
+                except Exception:
+                    pass
         
         #build response
         response = VerificationResponse(
@@ -622,6 +637,7 @@ async def verify_certificate_endpoint(file: UploadFile = File(...)):
             response.certificate_id = cert.get("certificate_id")
             response.issued_at = cert.get("issued_at")
             response.confidence_score = cert.get("authenticity_confidence")
+            response.reviewer_id = cert.get("reviewer_id")
         
         return response
         

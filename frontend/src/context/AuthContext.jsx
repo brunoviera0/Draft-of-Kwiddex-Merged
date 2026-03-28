@@ -27,7 +27,7 @@ export function useAuth() {
       picture: user.picture,
     } : null,
     token: null,
-    login: () => loginWithRedirect(),,
+    login: () => loginWithRedirect(),
     signup: () => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } }),
     logout: () => auth0Logout({ logoutParams: { returnTo: window.location.origin } }),
     getToken: getAccessTokenSilently,

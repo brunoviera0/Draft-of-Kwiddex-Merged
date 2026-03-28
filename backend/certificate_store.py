@@ -65,6 +65,7 @@ def lookup_certificate(certificate_id: str) -> Optional[dict]:
         "status": cert.get("status"),
         "revoked_at": cert.get("revoked_at").isoformat() if cert.get("revoked_at") else None,
         "revocation_reason": cert.get("revocation_reason"),
+        "certified_file_hash": cert.get("certified_file_hash"),
         "_entity": cert  # keep raw entity for updates
     }
 
@@ -127,3 +128,27 @@ def list_certificates(status: Optional[str] = None, limit: int = 50) -> list:
         }
         for r in results
     ]
+
+
+def store_certified_hash(certificate_id: str, certified_hash: str) -> None:
+    """Store the hash of the final certified PDF for integrity checking."""
+    client = _get_client()
+    query = client.query(kind=DATASTORE_KIND)
+    query.add_filter("certificate_id", "=", certificate_id)
+    results = list(query.fetch(limit=1))
+    if results:
+        entity = results[0]
+        entity["certified_file_hash"] = certified_hash
+        client.put(entity)
+
+
+def check_certified_hash(certificate_id: str, file_hash: str) -> Optional[bool]:
+    """Compare uploaded file hash against stored certified hash.
+    Returns True if match, False if mismatch, None if no hash stored (legacy cert)."""
+    record = lookup_certificate(certificate_id)
+    if record is None:
+        return None
+    stored_hash = record.get("certified_file_hash")
+    if stored_hash is None:
+        return None
+    return stored_hash == file_hash
