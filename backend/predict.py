@@ -2,7 +2,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException,Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from google.cloud import datastore, storage
+from google.cloud import datastore
 import torch
 import torchvision.transforms as transforms
 from torchvision.models import resnet18
@@ -43,14 +43,10 @@ async def require_auth(credentials: HTTPAuthorizationCredentials = Depends(secur
 
 #gcp
 GCP_PROJECT = "sentiment-analysis-379200"
-BUCKET_NAME = "kwiddex-datasets"
-DOCUMENTS_FOLDER = "documents"
 MODEL_LOCAL_PATH = "best_real_fake_resnet18.pt"
 
 #clients
 datastore_client = datastore.Client(project=GCP_PROJECT)
-storage_client = storage.Client(project=GCP_PROJECT)
-bucket = storage_client.bucket(BUCKET_NAME)
 
 
 
@@ -188,22 +184,7 @@ class RevokeResponse(BaseModel):
 
 
 
-def upload_to_gcs(file_content: bytes, original_filename: str, content_type: str) -> tuple:
-    #unique document ID
-    document_id = str(uuid.uuid4())
-    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-    
-    #GCS path with timestamp and UUID
-    file_extension = original_filename.split('.')[-1] if '.' in original_filename else 'unknown'
-    blob_name = f"{DOCUMENTS_FOLDER}/{timestamp}_{document_id}.{file_extension}"
-    
-    #Upload to GCS
-    blob = bucket.blob(blob_name)
-    blob.upload_from_string(file_content, content_type=content_type)
-    
-    gcs_path = f"gs://{BUCKET_NAME}/{blob_name}"
-    
-    return document_id, gcs_path
+
 
 
 
@@ -514,16 +495,9 @@ async def certify_document_endpoint(
                 detail=f"Unsupported file type: {file.content_type}. Must be PDF or image (JPEG, PNG, GIF, TIFF, BMP)."
             )
         
-        #run through CNN model to get confidence score
-        processed_image = preprocess_image(image)
-        
-        with torch.no_grad():
-            outputs = model(processed_image)
-            probabilities = torch.nn.functional.softmax(outputs, dim=1)
-            probabilities_np = probabilities.cpu().numpy()[0]
-        
-        predicted_class = int(np.argmax(probabilities_np))
-        confidence = float(np.max(probabilities_np))
+        #run Monte Carlo CNN analysis (same method as /monte_carlo endpoint)
+        mc_result = monte_carlo_inference(image, num_samples=30)
+        confidence = mc_result["confidence"]
         
         #CNN confidence is recorded in the certificate but does not gate approval.
         #Certification requires manual human approval. No auto-reject based on labels.
