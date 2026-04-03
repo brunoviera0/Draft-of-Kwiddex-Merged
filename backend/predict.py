@@ -328,8 +328,8 @@ async def predict(file: UploadFile = File(...)):
     try:
         content = await file.read()
         
-        #upload to GCS
-        document_id, gcs_path = upload_to_gcs(content, file.filename, file.content_type)
+        document_id = str(uuid.uuid4())
+        gcs_path = ""
         
         #process the document (pdf or image)
         if file.content_type == "application/pdf":
@@ -390,7 +390,8 @@ async def predict_monte_carlo(file: UploadFile = File(...), num_samples: int = 3
     require_model()
     try:
         content = await file.read()
-        document_id, gcs_path = upload_to_gcs(content, file.filename, file.content_type)
+        document_id = str(uuid.uuid4())
+        gcs_path = ""
         
         if file.content_type == "application/pdf":
             images = pdf2image.convert_from_bytes(content)
