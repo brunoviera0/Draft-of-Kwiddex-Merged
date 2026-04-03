@@ -1,4 +1,10 @@
 import express from 'express';
+import { auth } from 'express-oauth2-jwt-bearer';
+
+const requireAuth = auth({
+  issuerBaseURL: 'https://dev-jamm61acuiu8yfq6.us.auth0.com/',
+  audience: 'https://api.kwiddex.com',
+});
 import type { Request, Response } from 'express';
 import { limit } from './emailLimiter';
 
@@ -32,7 +38,7 @@ const resolveClientIp = (req: Request) => {
   return req.ip || 'local';
 };
 
-router.post('/email', async (req: Request, res: Response) => {
+router.post('/email', requireAuth, async (req: Request, res: Response) => {
   const ip = resolveClientIp(req);
   if (!limit(ip)) {
     return res.status(429).json({ error: 'Rate limit exceeded' });

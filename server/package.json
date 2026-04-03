@@ -10,17 +10,18 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "bcrypt": "npm:bcryptjs@^2.4.3",
     "cors": "^2.8.5",
     "express": "^4.21.2",
+    "express-oauth2-jwt-bearer": "^1.7.4",
     "multer": "^1.4.5-lts.2",
-    "pdf-lib": "^1.17.1",
     "mysql2": "^3.11.5",
-    "bcrypt": "npm:bcryptjs@^2.4.3"
+    "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
     "tsx": "^4.19.1",
-    "typescript": "^5.7.3",
-    "@types/bcrypt": "^5.0.2"
+    "typescript": "^5.7.3"
   },
   "engines": {
     "node": "20.x"

@@ -7,7 +7,6 @@ import VerifyPage from '@/pages/Verify'
 import OcrPage from '@/pages/Ocr'
 import SignPage from '@/pages/Sign'
 import About from '@/pages/About'
-import AuthPage from '@/pages/Auth'
 import ThemeToggle from '@/components/ThemeToggle'
 
 function App() {
@@ -22,7 +21,6 @@ function App() {
             <Route path="/sign" element={<SignPage />} />
             <Route path="/about" element={<About />} />
           </Route>
-          <Route path="/auth" element={<AuthPage />} />
 
           {/* Legacy redirects */}
           <Route path="/physical" element={<Navigate to="/" replace />} />

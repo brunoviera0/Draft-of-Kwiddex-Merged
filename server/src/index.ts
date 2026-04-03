@@ -7,7 +7,6 @@ import { createHash } from "node:crypto"
 import { createServer } from "node:http"
 import { emailRouter } from "./email"
 import physicalRouter from "./routes/physical"
-import authRouter from "./routes/auth"
 import wpRouter from "./routes/wordpress"
 
 const MIN_NODE_MAJOR = 18
@@ -88,7 +87,6 @@ const registerRoutes = (prefix: string) => {
 
   app.use(`${prefix}`, emailRouter)
   app.use(`${prefix}/physical`, physicalRouter)
-  app.use(`${prefix}/auth`, authRouter)
   app.use(`${prefix}/wp`, wpRouter)
 
   app.post(`${prefix}/verify`, upload.single("file"), async (req, res) => {
@@ -135,8 +133,12 @@ registerRoutes(`${BASE_PATH}/api`)
 
 app.use((_req, res) => { res.status(404).json({ error: "Not found" }) })
 app.use((error, _req, res, _next) => {
+  const status = error.status || error.statusCode || 500
+  if (status === 401) {
+    return res.status(401).json({ error: error.message || "Unauthorized" })
+  }
   console.error("Unhandled server error:", error)
-  res.status(500).json({ error: "Internal server error" })
+  res.status(status).json({ error: "Internal server error" })
 })
 
 const PORT = Number(process.env.PORT ?? 3001)

@@ -26,7 +26,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://kwiddex.com", "https://www.kwiddex.com"],
+    allow_origins=["https://kwiddex.com", "https://www.kwiddex.com", "http://localhost:5173", "http://localhost:3001"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
