@@ -1,12 +1,12 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { Shield, ScanLine, FileCheck, Newspaper, Fingerprint, Info } from 'lucide-react'
+import { Shield, ScanLine, FileCheck, Scale, Fingerprint, Info } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Analyze', icon: ScanLine },
-  { to: '/verify', label: 'Verify', icon: FileCheck },
-  { to: '/ocr', label: 'OCR', icon: Newspaper },
   { to: '/sign', label: 'Sign', icon: Fingerprint },
+  { to: '/verify', label: 'Verify', icon: FileCheck },
+  { to: '/compare', label: 'Compare', icon: Scale },
   { to: '/about', label: 'About', icon: Info },
 ]
 

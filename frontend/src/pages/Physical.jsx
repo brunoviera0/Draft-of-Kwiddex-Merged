@@ -615,40 +615,15 @@ export default function Physical({ initialTab = "verification", comparisonOnly =
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <div className="flex items-center gap-2">
               <span className={`h-2.5 w-2.5 rounded-full ${healthVariant}`} title={healthLabel} />
-              <h1 className="text-2xl font-semibold tracking-tight text-base-color">{comparisonOnly ? "Document comparison" : "Physical document checks"}</h1>
+              <h1 className="text-2xl font-semibold tracking-tight text-base-color">"Physical document checks"</h1>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              {comparisonOnly ? "Compare an original and questioned document with a single workflow." : "Use separate tabs for single document verification and original-vs-questioned comparison."}
+              "Upload a physical document image or PDF to get a CNN confidence analysis."
             </p>
-            {!comparisonOnly && (
-              <div className="mt-4 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("verification")}
-                  className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold ${
-                    activeTab === "verification"
-                      ? "border-blue-500 bg-blue-50 text-blue-900"
-                      : "border-border bg-base text-base-color"
-                  }`}
-                >
-                  <ScanLine className="h-4 w-4" /> Document verification
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("comparison")}
-                  className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold ${
-                    activeTab === "comparison"
-                      ? "border-blue-500 bg-blue-50 text-blue-900"
-                      : "border-border bg-base text-base-color"
-                  }`}
-                >
-                  <Files className="h-4 w-4" /> Physical comparison
-                </button>
-              </div>
-            )}
+
           </div>
 
-          {activeTab === "verification" && !comparisonOnly ? (
+          {true ? (
             <div className="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
               <form className="space-y-6 rounded-2xl border border-border bg-card p-6 shadow-sm" onSubmit={handleSubmit}>
                 <p className="text-sm text-muted-foreground">

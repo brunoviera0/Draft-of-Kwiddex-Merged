@@ -4,9 +4,9 @@ import { Toaster } from '@/components/ui/toaster'
 import Layout from '@/pages/Layout'
 import Physical from '@/pages/Physical'
 import VerifyPage from '@/pages/Verify'
-import OcrPage from '@/pages/Ocr'
 import SignPage from '@/pages/Sign'
 import About from '@/pages/About'
+import ComparePage from '@/pages/Compare'
 import ThemeToggle from '@/components/ThemeToggle'
 
 function App() {
@@ -17,7 +17,7 @@ function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<Physical embedded />} />
             <Route path="/verify" element={<VerifyPage />} />
-            <Route path="/ocr" element={<OcrPage />} />
+            <Route path="/compare" element={<ComparePage />} />
             <Route path="/sign" element={<SignPage />} />
             <Route path="/about" element={<About />} />
           </Route>

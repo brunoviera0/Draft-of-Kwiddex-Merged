@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Loader2 } from "lucide-react";
 
-export default function FileDropZone({ onFileSelect, loading }) {
+export default function FileDropZone({ onFileSelect, loading, title, description, acceptLabel }) {
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -84,10 +84,10 @@ export default function FileDropZone({ onFileSelect, loading }) {
               
               <div>
                 <h3 className="text-lg font-semibold text-base-color mb-2">
-                  {dragActive ? "Drop your PDF here" : "Upload PDF for Verification"}
+                  {dragActive ? "Drop your PDF here" : (title || "Upload PDF for Verification")}
                 </h3>
                 <p className="text-sm text-gray-600 mb-4">
-                  Drag and drop your PDF file here, or click to browse
+                  {description || "Drag and drop your PDF file here, or click to browse"}
                 </p>
                 
                 <Button
@@ -96,7 +96,7 @@ export default function FileDropZone({ onFileSelect, loading }) {
                   disabled={loading}
                 >
                   <Upload className="w-4 h-4 mr-2" />
-                  Choose PDF File
+                  {acceptLabel || "Choose PDF File"}
                 </Button>
               </div>
               
