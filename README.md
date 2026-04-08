@@ -5,254 +5,348 @@ CNN Model/FastAPI backend: https://github.com/brunoviera0/Kwiddex-CNN-Model
 Express Server/Frontend: https://github.com/Kwiddex/kwiddex
 
 
-2/26/26
-
 Server Architecture
 -------------------
-
+ 
 Express BFF (port 3001) sits between the frontend and FastAPI (port 8000).
-Express proxies auth and scoring requests to FastAPI, verifies JWTs locally,
-and handles PDF metadata extraction on its own.
-
-
-
-Auth flow: Frontend sends {email, password} to Express. Express maps email
-to username and forwards to FastAPI /register or /login. FastAPI issues a
-JWT (HS256). Express verifies that JWT using the shared KWX_JWT_SECRET.
-
-
-
+Express proxies scoring requests to FastAPI, handles PDF metadata extraction,
+and protects the email endpoint with Auth0 JWT validation.
+ 
+ 
+ 
+Auth flow: Frontend redirects to Auth0 Universal Login. Auth0 issues RS256
+JWTs with audience https://api.kwiddex.com. Frontend stores tokens via
+Auth0 SDK and attaches them as Bearer tokens on protected requests.
+FastAPI validates tokens using auth0_validator.py which fetches JWKS
+public keys from Auth0. Express validates tokens on the email endpoint
+using express-oauth2-jwt-bearer.
+ 
+ 
+ 
 Scoring flow: Frontend uploads a file to Express /api/physical/score.
 Express forwards it to FastAPI /monte_carlo. FastAPI runs 30 augmented
 CNN inferences and returns classification + stats. Express maps the
-response into the shape the frontend expects (score, reasons,
-flags, suggestions, subscores, confidence).
-
-***Response shape was changed to fit existing frontend, will be changed back to (score (%), Confidence Interval (CI))***
-
-
-
+response into the shape the frontend expects (confidence, confidence
+interval, Monte Carlo stats).
+ 
+ 
+ 
+Certification flow: Frontend sends file + Auth0 Bearer token to
+FastAPI /certify via Nginx /ml/certify. FastAPI validates the JWT,
+runs Monte Carlo CNN analysis, creates an RSA signed certificate,
+embeds it in the PDF metadata, stores the certification record and
+certified file hash in Google Cloud Datastore, and returns the
+certified PDF as a downloadable file.
+ 
+ 
+ 
+Verification flow: Frontend sends PDF to FastAPI /verify-certificate
+via Nginx /ml/verify-certificate. FastAPI extracts the embedded
+certificate and RSA signature from PDF metadata, verifies the
+signature using the public key, checks Datastore for revocation
+status, and compares the file hash against the stored certified
+hash to detect post certification modifications.
+ 
+ 
+ 
 Running the Servers
 -------------------
-
+ 
 FastAPI:
   
   cd backend
   
-  export KWX_JWT_SECRET=
-  
   uvicorn predict:app --host 0.0.0.0 --port 8000
-
+ 
 Express:
   
   cd server
   
-  echo "KWX_JWT_SECRET=" > .env
-  
-  echo "FASTAPI_URL=http://localhost:8000" >> .env
+  echo "FASTAPI_URL=http://localhost:8000" > .env
   
   npm install
   
   npm run dev:api
-
-
+ 
+Frontend:
+  
+  cd frontend
+  
+  npm install
+  
+  npm run dev
+ 
+ 
+Auth0 Configuration
+-------------------
+ 
+  Domain: dev-jamm61acuiu8yfq6.us.auth0.com
+  
+  Client ID: yBA5UqZj65KlgdyHsmQs4RycS4JqN8jf
+  
+  Audience: https://api.kwiddex.com
+  
+  Allowed Callback URLs: https://kwiddex.com
+  
+  Allowed Logout URLs: https://kwiddex.com
+  
+  Allowed Web Origins: https://kwiddex.com
+ 
+  The Kwiddex API must be registered in Auth0 Dashboard under
+  Applications > APIs with identifier https://api.kwiddex.com
+  and the application must be authorized under both User Access
+  and Client Access tabs.
+ 
+  Google social connection uses custom OAuth credentials.
+  To transfer ownership, create new Google OAuth credentials
+  in Google Cloud Console with redirect URI
+  https://dev-jamm61acuiu8yfq6.us.auth0.com/login/callback
+  and replace the Client ID and Secret in Auth0 Dashboard
+  under Authentication > Social > Google.
+ 
+ 
+Features
+--------
+ 
+Analyze (Public, no login required)
+ 
+  Upload a PDF or image to run it through the ResNet18 CNN with
+  Monte Carlo inference (30 augmented samples). Returns confidence
+  score, 95% confidence interval, agreement rate, and standard
+  deviation. No documents are stored. Metadata only is recorded
+  in Datastore.
+ 
+ 
+Certify (Requires Auth0 login)
+ 
+  Two step flow. Step 1: upload a PDF for Monte Carlo CNN analysis.
+  User reviews the results and a disclaimer that certification is
+  their professional judgment. Step 2: user clicks Certify This
+  Document. The PDF is certified with a Kwiddex RSA signed
+  certificate embedded in the PDF metadata. A visible certificate
+  page is appended. The certified PDF hash is stored in Datastore
+  for integrity checking. The certified PDF is returned for download.
+  The certificate records: unique ID, document hash, Monte Carlo
+  confidence score, reviewer email, timestamp, and status.
+ 
+ 
+Verify (Public, no login required)
+ 
+  Upload a PDF to check if it contains a valid Kwiddex certificate.
+  Extracts the certificate and RSA signature from PDF metadata,
+  verifies the signature, checks Datastore for revocation, and
+  compares the file hash against the stored certified hash to
+  detect modifications. Also extracts PDF metadata (title, author,
+  creator, producer, dates) and detects known editors. Displays
+  plain language verdict: certified and unmodified, modified after
+  certification, revoked, invalid signature, or no certificate found.
+ 
+ 
+Compare (Public, no login required)
+ 
+  Two tabs: Compare and Extract Text.
+  
+  Compare tab: upload two document images for side by side spectral
+  analysis using the LWSP (Linear Wave Stochastic Process) engine.
+  Images are converted to grayscale, band pass filtered, transformed
+  via 2D FFT, and compared using Power Spectral Density cross
+  correlation. Returns a similarity score from 0 to 100. User
+  controllable high cut filter slider adjusts how much fine detail
+  is included. Supports zoom, pan, notes, case naming, multi entry,
+  and PNG report download. Runs entirely client side with no backend.
+  
+  Extract Text tab: upload a PDF to extract embedded text content
+  using pdfjs-dist. Works with native text PDFs. Copy extracted text
+  to clipboard.
+ 
+ 
+Certificate Revocation (Requires Auth0 login)
+ 
+  POST to /ml/revoke-certificate/{certificate_id} sets the certificate
+  status to revoked in Datastore. Revoked certificates fail verification.
+  Revocation is permanent and administrative. Does not invalidate the
+  file, only the certificate.
+ 
+ 
 Current Tests
 -------------
-
+ 
+Certificate Roundtrip Test (tests/test_certificate_roundtrip.sh)
+ 
+  4 test cases covering the core certification flow:
+ 
+    Certify a PDF and receive certified PDF back.
+ 
+    Verify the certified PDF passes (valid, document intact).
+ 
+    Modify the certified PDF and verify it fails (document modified).
+ 
+    Verify a non certified PDF shows no certificate found.
+ 
+  Run:
+ 
+    export AUTH_TOKEN="your_auth0_token"
+ 
+    bash tests/test_certificate_roundtrip.sh
+ 
+ 
 FastAPI Unit Tests (backend/unit_tests_api.py)
-   
-   56 tests across 13 test classes. Tests FastAPI endpoints in isolation:
-   auth (register, login, token creation/verification), CNN prediction,
-   Monte Carlo inference, PDF certification and verification, certificate
-   storage/lookup/revocation, and input validation. Does not require
-   Express to be running.
-
-   Run:
-     
-     cd backend
-     
-     python -m unittest unit_tests_api.py -v
-
-Express-FastAPI Integration Tests (tests/test_express_fastapi.sh)
-   
-   38 assertions across 7 groups. Tests the live connection between
-   Express and FastAPI with both services running. Covers:
-
-   Health: Both services reachable, model loaded, RSA keys
-   present, Express reports CNN provider.
-
-   Auth Proxy: Signup via Express creates user in FastAPI,
-   login returns correct response shape {token, user: {id, email}},
-   duplicate signup rejected, wrong password rejected, empty fields
-   rejected.
-
-   JWT Interop: Token from Express login works on /auth/me.
-   Token from direct FastAPI login also works on Express /auth/me
-   (proves shared secret matches). Missing, invalid, and expired
-   tokens all return 401.
-
-   CNN Scoring: FastAPI /predict and /monte_carlo work
-   directly. Express /physical/score full pipeline returns all
-   required fields (score 0-100, reasons, flags, suggestions,
-   confidence, analysisId, subscores). Provider is "cnn".
-
-   ***as mentioned above, required fields will be changed to just encompass score and confidence intervals**
-
-   PDF Metadata: Express /verify extracts sha256 and core
-   metadata from uploaded PDFs.
-
-   WordPress Proxy: Returns 503 gracefully when
-   WORDPRESS_URL is not configured. (awaiting wordpress integration)
-
-   Error Handling: Missing file returns 400, unknown routes
-   return 404, non-image files rejected, empty email rejected.
-
-   Run:
-     
-     bash tests/test_express_fastapi.sh
-
-
-Next Week
----------
-
--Verify front end integration with Cypress end-to-end tests covering auth flows, document
-upload and scoring, and page navigation.
-
-
-
-3/12/26
-
-Site running on VM IP
-
-Nginx Reverse Proxy
--------------------
-
-Nginx is responsible for handling all incoming web traffic. It acts as a gateway between the internet and the backend services.
-
-Its main roles include:
-
-  receiving HTTP requests from users
-
-  serving frontend static files
-
-  routing API requests to the backend server
-
-  applying rate limiting
-
-  adding security headers
-
-  managing HTTPS once certificates are installed
-
-  Nginx runs on the public web ports:
-
-    80 (HTTP)
-    443 (HTTPS)
-
-Security Features
------------------
-
-
-Reverse Proxy Isolation
-
-All external traffic passes through Nginx before reaching backend services. This prevents direct access to internal services and centralizes request handling.
-
-
-Internal Service Ports
-
-  Backend services run on internal ports and are not exposed to the public internet.
-
-    Express API:
-    127.0.0.1:3001
-
-    FastAPI service:
-    127.0.0.1:8000
-
-Only the reverse proxy can communicate with them.
-
-
-Security Headers
-
-  Nginx includes several HTTP headers that improve browser security.
-
-  These headers help prevent:
-
-    clickjacking
-    MIME type sniffing
-    some cross-site scripting attacks
-
-
-API Rate Limiting
-
-  Rate limiting is enabled in Nginx to prevent excessive requests from a single IP address.
-
-  Current limits allow approximately:
-
-    10 requests per second per IP with a small burst allowance.
-
-
-  This helps protect against:
-
-    brute force attempts
-
-    automated scraping
-
-    basic denial-of-service attacks
-
-
-Domain Configuration
---------------------
-
-The domain is currently managed through Bluehost. DNS records are being updated to point the domain to the Google Cloud VM’s public IP.
-
-Once propagation completes, users will be able to access the application through the domain instead of the server IP.
-
-
-
+ 
+  Tests FastAPI endpoints in isolation: CNN prediction,
+  Monte Carlo inference, PDF certification and verification,
+  certificate storage/lookup/revocation, and input validation.
+ 
+  Run:
+ 
+    cd backend
+ 
+    python -m unittest unit_tests_api.py -v
+ 
+ 
+Express FastAPI Integration Tests (tests/test_express_fastapi.sh)
+ 
+  Tests the live connection between Express and FastAPI with
+  both services running. Covers health checks, CNN scoring,
+  PDF metadata extraction, error handling, and endpoint
+  availability.
+ 
+  Run:
+ 
+    bash tests/test_express_fastapi.sh
+ 
+ 
+Security
+--------
+ 
+Authentication
+ 
+  Auth0 Universal Login with RS256 JWTs. AuthGuard component
+  on the frontend gates the Sign/Certify page. FastAPI validates
+  tokens via JWKS public keys. Express validates tokens on the
+  email endpoint via express-oauth2-jwt-bearer.
+ 
+  Protected endpoints: /certify, /revoke-certificate,
+  /certificate/{id}, /document/{id}, /api/email.
+ 
+  Public endpoints: /predict, /monte_carlo, /verify-certificate,
+  /health, /api/verify, /api/physical/score.
+ 
+ 
+Rate Limiting
+ 
+  FastAPI endpoints are rate limited via slowapi:
+ 
+    /predict: 10 requests per minute per IP
+    /monte_carlo: 5 requests per minute per IP
+    /certify: 5 requests per minute per IP
+    /verify-certificate: 10 requests per minute per IP
+ 
+  Express email endpoint is rate limited by IP via custom limiter.
+ 
+  Nginx applies global rate limiting at approximately
+  10 requests per second per IP with burst allowance.
+ 
+ 
+File Size Limits
+ 
+  Express: 25MB via multer configuration.
+  FastAPI: 25MB enforced in application code.
+ 
+ 
+CORS
+ 
+  FastAPI: restricted to https://kwiddex.com, https://www.kwiddex.com,
+  and localhost origins for development.
+ 
+  Express: restricted to production and local development origins.
+ 
+ 
+Security Headers (Nginx)
+ 
+  Strict Transport Security (HSTS, 1 year with subdomains)
+  X Frame Options (SAMEORIGIN)
+  X Content Type Options (nosniff)
+  X XSS Protection (enabled, block mode)
+  Referrer Policy (strict origin when cross origin)
+ 
+ 
+Disabled Endpoints
+ 
+  /register returns 410 (handled by Auth0)
+  /login returns 410 (handled by Auth0)
+ 
+ 
+Data Storage
+ 
+  No user documents or PII are stored. Google Cloud Datastore
+  holds metadata only: prediction results (confidence, label, UUID),
+  certification records (certificate ID, document hash, certified
+  file hash, reviewer, status). RSA key pair at backend/keys/
+  (private key signs, public key verifies). Private key is in
+  .gitignore and must be backed up securely. If lost, all existing
+  certificates become unverifiable.
+ 
+ 
+Infrastructure
+--------------
+ 
 Live at: https://kwiddex.com
-----------------------------
-
+ 
+  Single GCP VM (sentiment-prod, 104.154.205.233)
+  GCP Project: sentiment-analysis-379200
+ 
 Services
-
-    Nginx (port 80/443) — reverse proxy, SSL termination, static frontend
-
-    Express (port 3001) — API proxy to FastAPI
-
-    FastAPI (port 8000) — CNN model, auth, certification
-
-  All services auto-start on boot via systemd.
-
+ 
+  Nginx (port 80/443): reverse proxy, SSL termination, static frontend
+  Express (port 3001): BFF, email, PDF metadata
+  FastAPI (port 8000): CNN model, certificates, auth validation
+  All services auto start on boot via systemd.
+ 
+Nginx Routing
+ 
+  / serves static frontend from ~/Draft-of-Kwiddex-Merged/frontend/dist
+  /api/* proxies to Express on port 3001
+  /ml/* proxies to FastAPI on port 8000 (prefix stripped)
+ 
 SSL
-
-    Certificate: Let's Encrypt via certbot
-    
-    Auto-renews every 60 days (cron job)
-    
-    Expires: June 21, 2026
-    
-    Manual renewal if needed: `sudo certbot renew`
-
+ 
+  Certificate: Let's Encrypt via certbot
+  Auto renews every 60 days (cron job)
+  Manual renewal if needed: sudo certbot renew
+ 
+Google Cloud Datastore
+ 
+  Project: sentiment-analysis-379200
+  Kinds: PredictionResult, Certification
+  No file storage. Metadata only.
+ 
+ 
 ### Useful Commands
 ```
 #Check service status
 sudo systemctl status kwiddex-fastapi kwiddex-express kwiddex-frontend
-
+ 
 #View logs
 sudo journalctl -u kwiddex-fastapi -f
 sudo journalctl -u kwiddex-express -f
-
+ 
 #Restart after code changes
 sudo systemctl restart kwiddex-fastapi kwiddex-express
-
+ 
 #Rebuild frontend after changes
 cd frontend && npm run build
-
+ 
 #Renew SSL manually
 sudo certbot renew
-
+ 
 #Test Nginx config
 sudo nginx -t && sudo systemctl reload nginx
 ```
-
+ 
 ### Config Files
-- Nginx: `/etc/nginx/sites-available/kwiddex` (copy in `docs/nginx-kwiddex.conf`)
-- Systemd: `/etc/systemd/system/kwiddex-*.service` (copies in `docs/`)
+```
+Nginx: /etc/nginx/sites-available/kwiddex (copy in docs/nginx-kwiddex.conf)
+Systemd: /etc/systemd/system/kwiddex-*.service (copies in docs/)
+```
+ 
+ 
