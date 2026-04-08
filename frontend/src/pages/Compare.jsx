@@ -520,30 +520,31 @@ function OcrTab() {
 
     try {
       const arrayBuffer = await selectedFile.arrayBuffer();
-      const pdf = await getDocument({
+      const loadingTask = getDocument({
         data: new Uint8Array(arrayBuffer),
-      }).promise;
+        useSystemFonts: true,
+      });
+      const pdf = await loadingTask.promise;
       let textContent = "";
 
       for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
         const page = await pdf.getPage(pageNumber);
-        const content = await page.getTextContent();
-        const pageText = content.items
+        const textObj = await page.getTextContent();
+        const pageText = textObj.items
           .map((item) => ("str" in item ? item.str : ""))
           .join(" ")
           .trim();
-        if (pageText) textContent += `${pageText}\n\n`;
+        if (pageText) textContent += pageText + "\n\n";
       }
 
       if (textContent.trim().length === 0) {
-        setError("No text content could be extracted from this PDF.");
-        setExtractedText("No text content could be extracted.");
+        setExtractedText("No extractable text found. This PDF may contain only images or scanned content.");
       } else {
         setExtractedText(textContent.trim());
       }
     } catch (err) {
-      console.error("Error during OCR:", err);
-      setError("Failed to process the document for OCR. Please try again.");
+      console.error("OCR Error:", err);
+      setError("Could not read this PDF. It may be encrypted, corrupted, or in an unsupported format. Error: " + (err.message || "Unknown"));
     }
     setLoading(false);
   };
@@ -721,56 +722,99 @@ function CompareTab() {
     }
   };
 
+  const [downloadError, setDownloadError] = useState(null);
+
   const downloadEntry = () => {
+    setDownloadError(null);
+
+    if (!entry.imgQ || !entry.imgR) {
+      setDownloadError("Please upload both a questioned and reference document before downloading.");
+      return;
+    }
+    if (!entry.filename.trim()) {
+      setDownloadError("Please enter a case or file name before downloading.");
+      return;
+    }
+
     const canvas = document.createElement("canvas");
-    const totalW = 400;
-    const totalH = 700;
+    const totalW = 500;
+    const totalH = 780;
     canvas.width = totalW;
     canvas.height = totalH;
     const ctx = canvas.getContext("2d");
 
-    ctx.fillStyle = "#1a1a1a";
+    // Background
+    ctx.fillStyle = "#111";
     ctx.fillRect(0, 0, totalW, totalH);
 
+    // Header
+    ctx.fillStyle = "#d97706";
+    ctx.fillRect(0, 0, totalW, 56);
     ctx.fillStyle = "#fff";
-    ctx.font = "bold 18px sans-serif";
+    ctx.font = "bold 20px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("Kwiddex Compare", totalW / 2, 30);
-    ctx.font = "11px sans-serif";
-    ctx.fillStyle = "#aaa";
-    ctx.fillText("Experimental — LWSP Spectral Analysis", totalW / 2, 46);
+    ctx.fillText("⚖️ Scales of Justice — LWSP Analysis", totalW / 2, 36);
 
-    let y = 60;
+    // Case name
+    ctx.fillStyle = "#ccc";
+    ctx.font = "13px sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("Case: " + entry.filename, 16, 78);
+    ctx.fillText("Date: " + new Date().toLocaleString(), 16, 96);
+
+    let y = 116;
     [canvasQRef, canvasRRef].forEach((ref, i) => {
-      const label = i === 0 ? "Questioned Doc" : "Reference Doc";
+      const label = i === 0 ? "Questioned Document" : "Reference Document";
       ctx.fillStyle = "#fff";
-      ctx.font = "bold 12px sans-serif";
+      ctx.font = "bold 13px sans-serif";
       ctx.textAlign = "left";
-      ctx.fillText(label, 12, y);
-      y += 16;
+      ctx.fillText(label, 16, y);
+      y += 6;
+
+      // Draw border
+      ctx.strokeStyle = "#333";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(14, y, totalW - 28, 220);
+
       if (ref.current) {
-        ctx.drawImage(ref.current, 10, y, totalW - 20, 220);
+        ctx.drawImage(ref.current, 15, y + 1, totalW - 30, 218);
       }
       y += 230;
     });
 
-    ctx.fillStyle = "#fff";
-    ctx.font = "13px sans-serif";
-    ctx.textAlign = "left";
-    ctx.fillText("Notes: " + (entry.notes || "(none)"), 12, y + 14);
-    y += 24;
-    ctx.fillText("File: " + (entry.filename || "(unnamed)"), 12, y + 14);
-    y += 24;
-    ctx.font = "bold 18px sans-serif";
+    // Score
+    ctx.fillStyle = "#d97706";
+    ctx.font = "bold 28px sans-serif";
     ctx.textAlign = "center";
     ctx.fillText(
-      "Similarity: " + (entry.score != null ? entry.score : "--"),
+      "Similarity Score: " + (entry.score != null ? entry.score : "Not computed"),
       totalW / 2,
-      y + 20
+      y + 10
     );
+    y += 30;
+
+    // Notes
+    if (entry.notes.trim()) {
+      ctx.fillStyle = "#ccc";
+      ctx.font = "12px sans-serif";
+      ctx.textAlign = "left";
+      const lines = entry.notes.split("\n");
+      ctx.fillText("Notes:", 16, y + 10);
+      y += 24;
+      for (const line of lines.slice(0, 6)) {
+        ctx.fillText(line.slice(0, 80), 16, y);
+        y += 16;
+      }
+    }
+
+    // Footer
+    ctx.fillStyle = "#666";
+    ctx.font = "10px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("Generated by Kwiddex — kwiddex.com", totalW / 2, totalH - 12);
 
     const link = document.createElement("a");
-    link.download = (entry.filename || "kwiddex_compare") + ".png";
+    link.download = entry.filename.trim().replace(/\s+/g, "_") + "_report.png";
     link.href = canvas.toDataURL("image/png");
     link.click();
   };
@@ -901,11 +945,11 @@ function CompareTab() {
       </Card>
 
 
-{/* Notes + Filename */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+{/* Notes + Case Name + Download */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="text-sm font-medium text-muted-foreground block mb-1">
-            Notes
+            Notes (optional)
           </label>
           <textarea
             value={entry.notes}
@@ -916,7 +960,7 @@ function CompareTab() {
         </div>
         <div>
           <label className="text-sm font-medium text-muted-foreground block mb-1">
-            File Name
+            Case / File Name
           </label>
           <input
             type="text"
@@ -926,6 +970,18 @@ function CompareTab() {
             className="w-full border border-border rounded-lg p-3 text-sm bg-card text-base-color"
           />
         </div>
+        <div className="flex flex-col justify-end">
+          <Button
+            onClick={downloadEntry}
+            className="bg-amber-600 hover:bg-amber-700 w-full"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download Report
+          </Button>
+          {downloadError && (
+            <p className="text-xs text-red-500 mt-1">{downloadError}</p>
+          )}
+        </div>
       </div>
 
       {/* Toolbar */}
@@ -933,9 +989,6 @@ function CompareTab() {
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={addEntry}>
             <Plus className="w-4 h-4 mr-1" /> New
-          </Button>
-          <Button variant="outline" size="sm" onClick={downloadEntry}>
-            <Download className="w-4 h-4 mr-1" /> Download
           </Button>
           <Button
             variant="outline"
