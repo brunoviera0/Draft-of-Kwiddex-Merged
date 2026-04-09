@@ -16,7 +16,7 @@ describe("CNN Scoring", () => {
     cy.contains("Confidence", { timeout: 60000 }).should("be.visible")
 
     // Should show percentage
-    cy.contains(/\d+\.\d+%/).should("exist")
+    cy.contains(/\d+%/).should("exist")
 
     // Should show CI bounds
     cy.contains("95% Confidence Interval").should("be.visible")

@@ -19,7 +19,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq curl python3 python3-pip
-          pip install reportlab Pillow --break-system-packages
+          pip install reportlab Pillow PyPDF2 --break-system-packages
 
       - name: Run full stack tests
         env:
