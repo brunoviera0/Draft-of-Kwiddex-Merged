@@ -13,8 +13,10 @@ describe("CNN Scoring", () => {
     cy.contains("button", "Check document").click()
 
     cy.contains("Confidence", { timeout: 60000 }).should("be.visible")
-    cy.contains("Monte Carlo").should("be.visible")
-    cy.contains("Samples").should("be.visible")
+    cy.contains("CNN Analysis").should("be.visible")
+    cy.contains("Monte Carlo Stats").should("be.visible")
+    cy.contains("Samples:").should("be.visible")
+    cy.contains("Agreement:").should("be.visible")
   })
 
   it("can reset after scoring", () => {
