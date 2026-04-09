@@ -18,13 +18,13 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import FileDropZone from "../components/verify/FileDropZone";
-import AuthGuard from "../components/auth/AuthGuard";
+
 import { toast } from "@/components/ui/use-toast";
 import { API_BASE } from "@/api/verify";
 import { useAuth } from "@/context/AuthContext";
 
-function SignPageContent() {
-  const { user, getToken } = useAuth();
+export default function SignPage() {
+  const { user, getToken, isAuthenticated, login } = useAuth();
   const [file, setFile] = useState(null);
   const [error, setError] = useState(null);
 
@@ -43,6 +43,10 @@ function SignPageContent() {
 
   // Step 1: Analyze the document
   const handleFileSelect = async (selectedFile) => {
+    if (!isAuthenticated) {
+      login();
+      return;
+    }
     if (!selectedFile) return;
     if (selectedFile.type !== "application/pdf") {
       setError("Please select a PDF file only.");
@@ -272,7 +276,30 @@ function SignPageContent() {
         {showUpload && (
           <Card className="border-2 border-dashed border-border hover:border-green-300 transition-colors">
             <CardContent className="p-0">
-              <FileDropZone onFileSelect={handleFileSelect} loading={analyzing} />
+      
+      {!isAuthenticated && (
+        <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 mb-6">
+          <CardContent className="p-4 flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                Sign in required to certify documents
+              </p>
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                You can browse this page to learn about the certification process. To certify a document, please sign in first.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              className="bg-amber-600 hover:bg-amber-700 shrink-0"
+              onClick={() => login()}
+            >
+              Sign In
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+        <FileDropZone onFileSelect={handleFileSelect} loading={analyzing} title="Upload PDF for Certification" description="Drag and drop your PDF here to analyze and certify" acceptLabel="Choose PDF File" />
               {analyzing && (
                 <div className="px-6 pb-6 text-center">
                   <p className="text-sm text-muted-foreground">
@@ -511,10 +538,4 @@ function SignPageContent() {
   );
 }
 
-export default function SignPage() {
-  return (
-    <AuthGuard>
-      <SignPageContent />
-    </AuthGuard>
-  );
-}
+

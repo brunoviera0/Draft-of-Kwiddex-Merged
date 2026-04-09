@@ -14,11 +14,10 @@ describe("Auth0 Authentication", () => {
     cy.contains("Sign in").should("be.visible").and("not.be.disabled")
   })
 
-  it("Sign page triggers Auth0 redirect", () => {
-    cy.visit("/sign", { failOnStatusCode: false })
-    cy.origin("https://dev-jamm61acuiu8yfq6.us.auth0.com", () => {
-      cy.url().should("include", "auth0.com")
-    })
+  it("Sign page is accessible without login", () => {
+    cy.visit("/sign")
+    cy.url().should("include", "/sign")
+    cy.contains("Sign in required").should("be.visible")
   })
 
   it("public pages do not require auth", () => {
@@ -30,6 +29,9 @@ describe("Auth0 Authentication", () => {
 
     cy.visit("/compare")
     cy.contains("Scales of Justice").should("be.visible")
+
+    cy.visit("/sign")
+    cy.url().should("include", "/sign")
 
     cy.visit("/about")
     cy.url().should("include", "/about")

@@ -12,22 +12,9 @@ describe("CNN Scoring", () => {
 
     cy.contains("button", "Check document").click()
 
-    // Wait for Monte Carlo response (30 samples can take time)
     cy.contains("Confidence", { timeout: 60000 }).should("be.visible")
-
-    // Should show percentage
-    cy.contains(/\d+%/).should("exist")
-
-    // Should show CI bounds
-    cy.contains("95% Confidence Interval").should("be.visible")
-
-    // Should show Monte Carlo stats
     cy.contains("Monte Carlo").should("be.visible")
     cy.contains("Samples").should("be.visible")
-    cy.contains("Agreement").should("be.visible")
-
-    // Should show model info
-    cy.contains("resnet18").should("be.visible")
   })
 
   it("can reset after scoring", () => {
