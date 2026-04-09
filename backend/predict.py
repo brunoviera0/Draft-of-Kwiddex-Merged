@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException,Depends
+from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -20,9 +20,26 @@ from auth0_validator import require_auth as auth0_require_auth
 from certification import certify_document, verify_pdf, certify_pdf, is_certified
 import certificate_store
 from fastapi.responses import Response
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from fastapi.responses import JSONResponse
 from pathlib import Path
 
 app = FastAPI()
+
+# Rate limiting
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request, exc):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Rate limit exceeded. Please wait before trying again."}
+    )
+
+MAX_UPLOAD_SIZE = 25 * 1024 * 1024  # 25MB
 
 app.add_middleware(
     CORSMiddleware,
@@ -75,6 +92,14 @@ except Exception as e:
     print(f"Could not load model: {e}")
     print("Endpoints will return errors.")
     model = None
+
+#check upload file size
+async def check_file_size(file: UploadFile):
+    content = await file.read()
+    if len(content) > MAX_UPLOAD_SIZE:
+        raise HTTPException(status_code=413, detail=f"File too large. Maximum size is {MAX_UPLOAD_SIZE // (1024*1024)}MB.")
+    await file.seek(0)
+    return content
 
 #check that model has been loaded
 def require_model():
@@ -304,7 +329,8 @@ def monte_carlo_inference(image: Image.Image, num_samples: int = 30) -> dict:
 
 
 @app.post("/predict", response_model=PredictionResponse)
-async def predict(file: UploadFile = File(...)):
+@limiter.limit("10/minute")
+async def predict(request: Request, file: UploadFile = File(...)):
     require_model()
     try:
         content = await file.read()
@@ -367,7 +393,8 @@ async def predict(file: UploadFile = File(...)):
 
 
 @app.post("/monte_carlo", response_model=MonteCarloResponse)
-async def predict_monte_carlo(file: UploadFile = File(...), num_samples: int = 30):
+@limiter.limit("5/minute")
+async def predict_monte_carlo(request: Request, file: UploadFile = File(...), num_samples: int = 30):
     require_model()
     try:
         content = await file.read()
@@ -416,7 +443,7 @@ async def predict_monte_carlo(file: UploadFile = File(...), num_samples: int = 3
 
 
 @app.get("/document/{document_id}")
-async def get_document_result(document_id: str):
+async def get_document_result(document_id: str, user: dict = Depends(require_auth)):
     try:
         query = datastore_client.query(kind="PredictionResult")
         query.add_filter("document_id", "=", document_id)
@@ -552,7 +579,8 @@ async def certify_document_endpoint(
 
 
 @app.post("/verify-certificate", response_model=VerificationResponse)
-async def verify_certificate_endpoint(file: UploadFile = File(...)):
+@limiter.limit("10/minute")
+async def verify_certificate_endpoint(request: Request, file: UploadFile = File(...)):
     try:
         content = await file.read()
         

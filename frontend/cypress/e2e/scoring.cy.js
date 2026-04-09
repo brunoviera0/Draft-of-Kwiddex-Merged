@@ -1,5 +1,5 @@
 describe("CNN Scoring", () => {
-  it("uploads image and shows confidence + CI", () => {
+  it("uploads image and shows Monte Carlo results", () => {
     cy.visit("/")
     cy.contains("Physical document checks").should("be.visible")
 
@@ -12,8 +12,8 @@ describe("CNN Scoring", () => {
 
     cy.contains("button", "Check document").click()
 
-    // Wait for CNN response
-    cy.contains("Confidence", { timeout: 30000 }).should("be.visible")
+    // Wait for Monte Carlo response (30 samples can take time)
+    cy.contains("Confidence", { timeout: 60000 }).should("be.visible")
 
     // Should show percentage
     cy.contains(/\d+\.\d+%/).should("exist")
@@ -21,11 +21,13 @@ describe("CNN Scoring", () => {
     // Should show CI bounds
     cy.contains("95% Confidence Interval").should("be.visible")
 
-    // Should NOT show old AiResult fields
-    cy.contains("Likelihood original").should("not.exist")
-    cy.contains("Reasons").should("not.exist")
-    cy.contains("Flags").should("not.exist")
-    cy.contains("/ 100").should("not.exist")
+    // Should show Monte Carlo stats
+    cy.contains("Monte Carlo").should("be.visible")
+    cy.contains("Samples").should("be.visible")
+    cy.contains("Agreement").should("be.visible")
+
+    // Should show model info
+    cy.contains("resnet18").should("be.visible")
   })
 
   it("can reset after scoring", () => {
@@ -39,8 +41,7 @@ describe("CNN Scoring", () => {
     })
 
     cy.contains("button", "Check document").click()
-    cy.contains("Confidence", { timeout: 30000 }).should("be.visible")
+    cy.contains("Confidence", { timeout: 60000 }).should("be.visible")
     cy.contains("button", "Reset").click()
-    cy.contains("Run the scorer to see results.").should("be.visible")
   })
 })

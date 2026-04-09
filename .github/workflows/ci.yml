@@ -1,0 +1,92 @@
+name: Kwiddex Test Suite
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  backend-tests:
+    name: Backend and Security Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq curl python3
+
+      - name: Run full stack tests
+        env:
+          BASE_URL: https://kwiddex.com
+        run: bash tests/test_full_stack.sh
+
+      - name: Run full stack tests with auth (certificate roundtrip)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          BASE_URL: https://kwiddex.com
+          AUTH0_DOMAIN: ${{ secrets.AUTH0_DOMAIN }}
+          AUTH0_CLIENT_ID: ${{ secrets.AUTH0_M2M_CLIENT_ID }}
+          AUTH0_CLIENT_SECRET: ${{ secrets.AUTH0_M2M_CLIENT_SECRET }}
+          AUTH0_AUDIENCE: ${{ secrets.AUTH0_AUDIENCE }}
+        run: |
+          TOKEN_RESPONSE=$(curl -s --request POST \
+            --url "https://${AUTH0_DOMAIN}/oauth/token" \
+            --header 'content-type: application/json' \
+            --data "{
+              \"client_id\": \"${AUTH0_CLIENT_ID}\",
+              \"client_secret\": \"${AUTH0_CLIENT_SECRET}\",
+              \"audience\": \"${AUTH0_AUDIENCE}\",
+              \"grant_type\": \"client_credentials\"
+            }")
+          
+          AUTH_TOKEN=$(echo "$TOKEN_RESPONSE" | python3 -c "import json,sys; print(json.load(sys.stdin)['access_token'])" 2>/dev/null)
+          
+          if [ -z "$AUTH_TOKEN" ]; then
+            echo "Failed to get Auth0 token. Skipping authenticated tests."
+            echo "$TOKEN_RESPONSE"
+            exit 0
+          fi
+          
+          export AUTH_TOKEN
+          bash tests/test_full_stack.sh
+
+  cypress-tests:
+    name: Cypress E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run Cypress tests
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: frontend
+          browser: chrome
+          headless: true
+          config: baseUrl=https://kwiddex.com
+        env:
+          CYPRESS_baseUrl: https://kwiddex.com
+
+      - name: Upload Cypress screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: frontend/cypress/screenshots
+          retention-days: 7
