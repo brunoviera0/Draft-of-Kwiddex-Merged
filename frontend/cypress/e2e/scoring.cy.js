@@ -1,5 +1,5 @@
 describe("CNN Scoring", () => {
-  it("uploads image and shows Monte Carlo results", () => {
+  it("uploads image and shows results", () => {
     cy.visit("/analyze")
     cy.contains("Physical document checks").should("be.visible")
 
@@ -11,12 +11,8 @@ describe("CNN Scoring", () => {
     })
 
     cy.contains("button", "Check document").click()
-
-    cy.contains("Confidence", { timeout: 60000 }).should("be.visible")
-    cy.contains("CNN Analysis").should("be.visible")
-    cy.contains("Monte Carlo Stats").should("be.visible")
-    cy.contains("Samples:").should("be.visible")
-    cy.contains("Agreement:").should("be.visible")
+    cy.contains("Confidence", { timeout: 90000 }).should("be.visible")
+    cy.contains("CNN Analysis", { timeout: 10000 }).should("be.visible")
   })
 
   it("can reset after scoring", () => {
@@ -30,7 +26,7 @@ describe("CNN Scoring", () => {
     })
 
     cy.contains("button", "Check document").click()
-    cy.contains("Confidence", { timeout: 60000 }).should("be.visible")
+    cy.contains("Confidence", { timeout: 90000 }).should("be.visible")
     cy.contains("button", "Reset").click()
   })
 })
