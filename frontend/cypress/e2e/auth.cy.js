@@ -22,7 +22,7 @@ describe("Auth0 Authentication", () => {
 
   it("public pages do not require auth", () => {
     cy.visit("/")
-    cy.contains("Physical document checks").should("be.visible")
+    cy.contains("Kwiddex").should("be.visible")
 
     cy.visit("/verify")
     cy.url().should("include", "/verify")
