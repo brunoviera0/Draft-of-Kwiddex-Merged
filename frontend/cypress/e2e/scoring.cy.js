@@ -1,6 +1,6 @@
 describe("CNN Scoring", () => {
   it("uploads image and shows Monte Carlo results", () => {
-    cy.visit("/")
+    cy.visit("/analyze")
     cy.contains("Physical document checks").should("be.visible")
 
     cy.fixture("test-document.png", null).then((img) => {
@@ -20,7 +20,7 @@ describe("CNN Scoring", () => {
   })
 
   it("can reset after scoring", () => {
-    cy.visit("/")
+    cy.visit("/analyze")
 
     cy.fixture("test-document.png", null).then((img) => {
       cy.get('input[type="file"]').first().selectFile(

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from '@/components/ui/toaster'
 import Layout from '@/pages/Layout'
 import Physical from '@/pages/Physical'
+import Home from '@/pages/Home'
 import VerifyPage from '@/pages/Verify'
 import SignPage from '@/pages/Sign'
 import About from '@/pages/About'
@@ -15,7 +16,8 @@ function App() {
       <Router>
         <Routes>
           <Route element={<Layout />}>
-            <Route path="/" element={<Physical embedded />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/analyze" element={<Physical embedded />} />
             <Route path="/verify" element={<VerifyPage />} />
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/sign" element={<SignPage />} />
