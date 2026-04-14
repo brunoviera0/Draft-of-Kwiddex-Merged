@@ -609,7 +609,7 @@ function OcrTab() {
                     <CheckCircle className="w-5 h-5 text-green-600" />
                     Text Extracted
                   </CardTitle>
-                  <Button variant="outline" size="sm" onClick={reset}>
+                  <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted" onClick={reset}>
                     Extract Another
                   </Button>
                 </div>

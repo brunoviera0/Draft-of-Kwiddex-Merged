@@ -200,7 +200,7 @@ function VerifyPageContent() {
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5 text-blue-600" /> Uploaded File</CardTitle>
-                    <Button variant="outline" size="sm" className="border-border text-foreground" onClick={resetUpload}>Upload New File</Button>
+                    <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted" onClick={resetUpload}>Upload New File</Button>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -335,7 +335,7 @@ function VerifyPageContent() {
                             {isAuthenticated ? (
                               <Button variant="outline" size="sm" className="shrink-0 ml-4 border-border text-foreground hover:bg-muted" onClick={() => setShowReportForm(true)}><Flag className="w-4 h-4 mr-1" /> Report</Button>
                             ) : (
-                              <Button variant="outline" size="sm" className="shrink-0 ml-4" onClick={() => login()}>Sign in to Report</Button>
+                              <Button variant="outline" size="sm" className="shrink-0 ml-4 border-border text-foreground hover:bg-muted" onClick={() => login()}>Sign in to Report</Button>
                             )}
                           </div>
                         ) : (
@@ -346,7 +346,7 @@ function VerifyPageContent() {
                             <div className="flex items-center justify-between">
                               <p className={`text-xs ${reportReason.trim().length >= 50 ? "text-green-600" : "text-muted-foreground"}`}>{reportReason.trim().length}/50 characters minimum</p>
                               <div className="flex gap-2">
-                                <Button variant="outline" size="sm" onClick={() => { setShowReportForm(false); setReportReason(""); setReportError(null); }}>Cancel</Button>
+                                <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted" onClick={() => { setShowReportForm(false); setReportReason(""); setReportError(null); }}>Cancel</Button>
                                 <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={submitReport} disabled={reportSubmitting || reportReason.trim().length < 50}>
                                   {reportSubmitting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Send className="w-4 h-4 mr-1" />} Submit Dispute
                                 </Button>
@@ -385,7 +385,7 @@ function VerifyPageContent() {
                         <CardContent><Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">{results.knownEditor} Detected</Badge></CardContent></Card>
                     )}
                     {!showMetadata ? (
-                      <Button onClick={() => setShowMetadata(true)} variant="outline" className="w-full"><FileText className="w-4 h-4 mr-2" /> View Full Metadata</Button>
+                      <Button onClick={() => setShowMetadata(true)} variant="outline" className="w-full border-border text-foreground hover:bg-muted"><FileText className="w-4 h-4 mr-2" /> View Full Metadata</Button>
                     ) : (
                       <div className="space-y-4">
                         <Card><CardHeader className="pb-3"><CardTitle className="flex items-center gap-2"><Hash className="w-5 h-5 text-green-600" /> File Integrity Hash</CardTitle></CardHeader>

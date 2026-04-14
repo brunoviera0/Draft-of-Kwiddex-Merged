@@ -514,7 +514,7 @@ async def certify_document_endpoint(
         
         #default reviewer_id to authenticated user if not provided
         if not reviewer_id:
-            reviewer_id = user.get("sub")
+            reviewer_id = user.get("email") or user.get("sub")
         
         if not content:
             raise HTTPException(status_code=400, detail="Empty file uploaded.")
