@@ -14,6 +14,12 @@ and protects the email endpoint with Auth0 JWT validation.
  
  
  
+Navigation: Home, Analyze, Sign, Verify, Compare, About.
+Desktop shows full nav bar. Mobile shows hamburger menu with
+dropdown. Menu auto-closes on route change.
+ 
+ 
+ 
 Auth flow: Frontend redirects to Auth0 Universal Login. Auth0 issues RS256
 JWTs with audience https://api.kwiddex.com. Frontend stores tokens via
 Auth0 SDK and attaches them as Bearer tokens on protected requests.
@@ -163,38 +169,65 @@ Compare (Public, no login required)
 Certificate Revocation (Requires Auth0 login)
  
   POST to /ml/revoke-certificate/{certificate_id} sets the certificate
-  status to revoked in Datastore. Revoked certificates fail verification.
-  Revocation is permanent and administrative. Does not invalidate the
-  file, only the certificate.
+  status to revoked in Datastore. Only the original certifier can
+  revoke their own certificate. Revoked certificates fail verification.
+  Revocation is permanent. Does not invalidate the file, only the
+  certificate.
+
+
+Certificate Dispute System (Requires Auth0 login to report)
+ 
+  Any authenticated user can dispute a certificate by submitting a
+  report with a written reason (minimum 50 characters). Disputes are
+  public, permanent, informational annotations. They do not block or
+  invalidate the certificate. Anyone who verifies a disputed document
+  sees the dispute details including the reporter, reason, and status.
+
+  One report per user per certificate. Users cannot dispute their own
+  certificates. The original certifier can dismiss a dispute (with a
+  required written response, minimum 20 characters) or accept it
+  (which triggers a self-revoke). Dismissed disputes remain permanently
+  visible with the certifier's response.
+
+  Kwiddex does not adjudicate disputes. Resolution occurs through
+  established professional or legal channels. The dispute record
+  serves as the reliability marker.
+
+  Endpoints:
+    POST /report-certificate/{certificate_id} - file a dispute
+    POST /resolve-dispute/{certificate_id}/{dispute_id} - dismiss or accept
+    GET /my-certificates - view certificates signed by the current user
+
+  Datastore Kind: CertificateDispute
  
  
 Current Tests
 -------------
  
-Certificate Roundtrip Test (tests/test_certificate_roundtrip.sh)
+Full Stack Tests (tests/test_full_stack.sh)
  
-  4 test cases covering the core certification flow:
- 
-    Certify a PDF and receive certified PDF back.
- 
-    Verify the certified PDF passes (valid, document intact).
- 
-    Modify the certified PDF and verify it fails (document modified).
- 
-    Verify a non certified PDF shows no certificate found.
+  40+ assertions across 9 sections: health, security headers,
+  auth/access control, public endpoints, input validation,
+  rate limiting, CORS, certificate roundtrip, and SSL.
+  Includes authenticated certificate roundtrip when AUTH_TOKEN
+  is set.
  
   Run:
  
     export AUTH_TOKEN="your_auth0_token"
  
-    bash tests/test_certificate_roundtrip.sh
+    bash tests/test_full_stack.sh
  
  
 FastAPI Unit Tests (backend/unit_tests_api.py)
  
-  Tests FastAPI endpoints in isolation: CNN prediction,
-  Monte Carlo inference, PDF certification and verification,
-  certificate storage/lookup/revocation, and input validation.
+  29 tests covering health, disabled endpoints (register/login
+  return 410), protected endpoint auth checks (certify, revoke,
+  document, certificate, my-certificates, report-certificate,
+  resolve-dispute), CNN prediction, Monte Carlo inference,
+  verify-certificate (including dispute fields), input
+  validation, and unknown routes. Requires GCP Datastore
+  credentials so runs locally on the VM only, not in CI.
  
   Run:
  
@@ -203,16 +236,33 @@ FastAPI Unit Tests (backend/unit_tests_api.py)
     python -m unittest unit_tests_api.py -v
  
  
-Express FastAPI Integration Tests (tests/test_express_fastapi.sh)
+Cypress Tests (frontend/cypress/e2e/)
  
-  Tests the live connection between Express and FastAPI with
-  both services running. Covers health checks, CNN scoring,
-  PDF metadata extraction, error handling, and endpoint
-  availability.
+  4 spec files, approximately 17 tests:
+    auth.cy.js - Sign in button, public page access
+    navigation.cy.js - Home page, nav links, feature cards, redirects
+    scoring.cy.js - CNN upload and Monte Carlo results
+    verify.cy.js - Upload prompt, dispute description, certificate check
+ 
+  Run locally:
+ 
+    cd frontend && npx cypress run
+ 
+ 
+Dispute Flow Demo (tests/test_dispute_flow.sh)
+ 
+  End-to-end demo of the certificate dispute lifecycle:
+  certify, verify clean, file dispute, verify with dispute
+  visible, check certifier profile, dismiss dispute, verify
+  permanent audit trail. Requires AUTH_TOKEN. Note: M2M token
+  is the same identity as certifier so self-report is blocked.
+  Full flow requires two different Auth0 accounts.
  
   Run:
  
-    bash tests/test_express_fastapi.sh
+    export AUTH_TOKEN="your_auth0_token"
+ 
+    bash tests/test_dispute_flow.sh
  
  
 Security
@@ -226,7 +276,9 @@ Authentication
   email endpoint via express-oauth2-jwt-bearer.
  
   Protected endpoints: /certify, /revoke-certificate,
-  /certificate/{id}, /document/{id}, /api/email.
+  /certificate/{id}, /document/{id}, /api/email,
+  /report-certificate/{id}, /resolve-dispute/{id}/{id},
+  /my-certificates.
  
   Public endpoints: /predict, /monte_carlo, /verify-certificate,
   /health, /api/verify, /api/physical/score.
@@ -317,7 +369,7 @@ SSL
 Google Cloud Datastore
  
   Project: sentiment-analysis-379200
-  Kinds: PredictionResult, Certification
+  Kinds: PredictionResult, Certification, CertificateDispute
   No file storage. Metadata only.
  
  
@@ -342,6 +394,15 @@ sudo certbot renew
 #Test Nginx config
 sudo nginx -t && sudo systemctl reload nginx
 ```
+ 
+GitHub Actions CI (.github/workflows/ci.yml)
+ 
+  Triggers on push to main, pull requests to main, and manual
+  dispatch. Two jobs run in parallel:
+    Backend: full-stack tests + authenticated certificate roundtrip
+    Cypress: 4 spec files headless in Chrome against live site
+  Unit tests are excluded from CI (require GCP Datastore credentials).
+ 
  
 ### Config Files
 ```
