@@ -584,7 +584,7 @@ function OcrTab() {
       </AnimatePresence>
 
       {extractedText === null ? (
-        <Card className="border-2 border-dashed border-border hover:border-amber-300 transition-colors">
+        <Card className="border-2 border-dashed border-border hover:border-blue-300 transition-colors">
           <CardContent className="p-0">
             <FileDropZone
               onFileSelect={handleFileSelect}
@@ -905,7 +905,7 @@ function CompareTab() {
               <Button
                 onClick={handleCompare}
                 disabled={!entry.imgQ || !entry.imgR || computing}
-                className="bg-amber-600 hover:bg-amber-700"
+                className="bg-blue-600 hover:bg-blue-700"
               >
                 {computing ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -973,7 +973,7 @@ function CompareTab() {
         <div className="flex flex-col justify-end">
           <Button
             onClick={downloadEntry}
-            className="bg-amber-600 hover:bg-amber-700 w-full"
+            className="bg-blue-600 hover:bg-blue-700 text-white w-full"
           >
             <Download className="w-4 h-4 mr-2" />
             Download Report
@@ -987,12 +987,13 @@ function CompareTab() {
       {/* Toolbar */}
       <div className="flex items-center justify-between py-2">
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={addEntry}>
+          <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted" onClick={addEntry}>
             <Plus className="w-4 h-4 mr-1" /> New
           </Button>
           <Button
             variant="outline"
             size="sm"
+            className="border-border text-foreground hover:bg-muted"
             onClick={() => setShowDeleteModal(true)}
           >
             <Trash2 className="w-4 h-4 mr-1" /> Delete
@@ -1041,7 +1042,7 @@ function CompareTab() {
               </Button>
               <Button
                 onClick={deleteEntry}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
               >
                 Delete
               </Button>
@@ -1066,7 +1067,7 @@ export default function ComparePage() {
         {/* Header */}
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-3 mb-3">
-            <div className="w-12 h-12 bg-amber-600 rounded-xl flex items-center justify-center text-2xl">
+            <div className="w-12 h-12 bg-blue-600/10 rounded-xl flex items-center justify-center text-2xl">
               ⚖️
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-base-color">
@@ -1087,7 +1088,7 @@ export default function ComparePage() {
             onClick={() => setActiveTab("compare")}
             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === "compare"
-                ? "bg-amber-600 text-white"
+                ? "bg-blue-600 text-white"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -1098,7 +1099,7 @@ export default function ComparePage() {
             onClick={() => setActiveTab("ocr")}
             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === "ocr"
-                ? "bg-amber-600 text-white"
+                ? "bg-blue-600 text-white"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >

@@ -152,3 +152,139 @@ def check_certified_hash(certificate_id: str, file_hash: str) -> Optional[bool]:
     if stored_hash is None:
         return None
     return stored_hash == file_hash
+
+
+# ── Dispute System ──
+
+DISPUTE_KIND = "CertificateDispute"
+
+
+def file_dispute(
+    certificate_id: str,
+    reporter_id: str,
+    reporter_email: str,
+    reason: str
+) -> dict:
+    """File a dispute against a certificate. One per user per certificate."""
+    client = _get_client()
+
+    # Check one-per-user-per-cert
+    query = client.query(kind=DISPUTE_KIND)
+    query.add_filter("certificate_id", "=", certificate_id)
+    query.add_filter("reporter_id", "=", reporter_id)
+    existing = list(query.fetch(limit=1))
+    if existing:
+        return {"success": False, "message": "You have already reported this certificate."}
+
+    # Verify certificate exists
+    cert = lookup_certificate(certificate_id)
+    if cert is None:
+        return {"success": False, "message": "Certificate not found."}
+
+    key = client.key(DISPUTE_KIND)
+    entity = datastore.Entity(key=key)
+    entity.update({
+        "certificate_id": certificate_id,
+        "reporter_id": reporter_id,
+        "reporter_email": reporter_email,
+        "reason": reason,
+        "filed_at": datetime.utcnow(),
+        "dispute_status": "open",
+        "certifier_response": None,
+        "resolved_at": None,
+    })
+    client.put(entity)
+
+    return {
+        "success": True,
+        "message": "Dispute filed successfully.",
+        "dispute_id": str(entity.key.id),
+        "certificate_id": certificate_id,
+    }
+
+
+def get_disputes_for_certificate(certificate_id: str) -> list:
+    """Get all disputes for a certificate."""
+    client = _get_client()
+    query = client.query(kind=DISPUTE_KIND)
+    query.add_filter("certificate_id", "=", certificate_id)
+    results = list(query.fetch())
+
+    return [
+        {
+            "dispute_id": str(r.key.id),
+            "reporter_email": r.get("reporter_email"),
+            "reason": r.get("reason"),
+            "filed_at": r.get("filed_at").isoformat() if r.get("filed_at") else None,
+            "dispute_status": r.get("dispute_status", "open"),
+            "certifier_response": r.get("certifier_response"),
+            "resolved_at": r.get("resolved_at").isoformat() if r.get("resolved_at") else None,
+        }
+        for r in results
+    ]
+
+
+def resolve_dispute(
+    certificate_id: str,
+    dispute_id: str,
+    action: str,
+    certifier_response: str
+) -> dict:
+    """Resolve a dispute. action is 'dismiss' or 'accept'."""
+    client = _get_client()
+
+    # Find the dispute
+    key = client.key(DISPUTE_KIND, int(dispute_id))
+    entity = client.get(key)
+
+    if entity is None:
+        return {"success": False, "message": "Dispute not found."}
+
+    if entity.get("certificate_id") != certificate_id:
+        return {"success": False, "message": "Dispute does not belong to this certificate."}
+
+    if entity.get("dispute_status") != "open":
+        return {"success": False, "message": "Dispute has already been resolved."}
+
+    if action == "dismiss":
+        entity["dispute_status"] = "dismissed"
+        entity["certifier_response"] = certifier_response
+        entity["resolved_at"] = datetime.utcnow()
+        client.put(entity)
+        return {"success": True, "message": "Dispute dismissed.", "dispute_status": "dismissed"}
+
+    elif action == "accept":
+        entity["dispute_status"] = "accepted"
+        entity["certifier_response"] = certifier_response
+        entity["resolved_at"] = datetime.utcnow()
+        client.put(entity)
+        # Self-revoke the certificate
+        revoke_certificate(certificate_id, reason=f"Certifier accepted dispute: {certifier_response}")
+        return {"success": True, "message": "Dispute accepted. Certificate revoked.", "dispute_status": "accepted"}
+
+    return {"success": False, "message": "Invalid action. Use 'dismiss' or 'accept'."}
+
+
+def get_certificates_by_reviewer(reviewer_id: str) -> list:
+    """Get all certificates signed by a specific reviewer."""
+    client = _get_client()
+    query = client.query(kind=DATASTORE_KIND)
+    query.add_filter("reviewer_id", "=", reviewer_id)
+    query.order = ["-issued_at"]
+    results = list(query.fetch(limit=100))
+
+    certs = []
+    for r in results:
+        cert_id = r.get("certificate_id")
+        disputes = get_disputes_for_certificate(cert_id)
+        certs.append({
+            "certificate_id": cert_id,
+            "issued_at": r.get("issued_at").isoformat() if r.get("issued_at") else None,
+            "confidence_score": r.get("confidence_score"),
+            "reviewer_id": r.get("reviewer_id"),
+            "status": r.get("status"),
+            "original_filename": r.get("original_filename"),
+            "disputes": disputes,
+            "open_disputes": sum(1 for d in disputes if d["dispute_status"] == "open"),
+        })
+    return certs

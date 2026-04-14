@@ -177,6 +177,15 @@ class LoginResponse(BaseModel):
     message: str
 
 #certification models
+class DisputeInfo(BaseModel):
+    dispute_id: str
+    reporter_email: Optional[str] = None
+    reason: str
+    filed_at: Optional[str] = None
+    dispute_status: str
+    certifier_response: Optional[str] = None
+    resolved_at: Optional[str] = None
+
 class VerificationResponse(BaseModel):
     valid: bool
     has_certificate: bool
@@ -190,6 +199,8 @@ class VerificationResponse(BaseModel):
     reviewer_id: Optional[str] = None
     organization: Optional[str] = None
     verification_link: Optional[str] = None
+    disputes: Optional[list] = None
+    has_disputes: bool = False
 
 class CertificateLookupResponse(BaseModel):
     found: bool
@@ -672,11 +683,18 @@ async def get_certificate_details(certificate_id: str, user: dict = Depends(requ
 
 @app.post("/revoke-certificate/{certificate_id}")
 async def revoke_certificate_endpoint(certificate_id: str, reason: Optional[str] = None, user: dict = Depends(require_auth)):
-    
-    #Once revoked, the certificate will fail verification even if the
-    #signature is technically valid. Useful if a certification was
-    #issued in error or if fraud is later discovered.
+    """
+    Self-revoke a certificate. Only the original certifier can revoke.
+    """
     try:
+        # Check ownership
+        cert = certificate_store.lookup_certificate(certificate_id)
+        if cert is None:
+            raise HTTPException(status_code=404, detail="Certificate not found")
+        caller_id = user.get("sub", "")
+        if cert.get("reviewer_id") != caller_id and cert.get("reviewer_id") != user.get("email", ""):
+            raise HTTPException(status_code=403, detail="Only the original certifier can revoke this certificate.")
+        
         result = certificate_store.revoke_certificate(certificate_id, reason)
         
         if not result["success"]:
@@ -692,6 +710,105 @@ async def revoke_certificate_endpoint(certificate_id: str, reason: Optional[str]
         raise HTTPException(status_code=500, detail=f"Revocation error: {str(e)}")
 
 
+
+
+
+
+# ── Dispute System ──
+
+class ReportRequest(BaseModel):
+    reason: str
+
+@app.post("/report-certificate/{certificate_id}")
+async def report_certificate_endpoint(
+    certificate_id: str,
+    report: ReportRequest,
+    user: dict = Depends(require_auth)
+):
+    """
+    Report/dispute a certificate. Requires login and a reason (min 50 chars).
+    One report per user per certificate. Cannot report your own certificate.
+    """
+    reason = report.reason.strip()
+    if len(reason) < 50:
+        raise HTTPException(status_code=400, detail="Reason must be at least 50 characters to ensure a substantive report.")
+
+    # Check certificate exists and reporter is not the certifier
+    cert = certificate_store.lookup_certificate(certificate_id)
+    if cert is None:
+        raise HTTPException(status_code=404, detail="Certificate not found.")
+
+    caller_id = user.get("sub", "")
+    caller_email = user.get("email", caller_id)
+
+    if cert.get("reviewer_id") == caller_id or cert.get("reviewer_id") == caller_email:
+        raise HTTPException(status_code=400, detail="You cannot dispute your own certificate. Use self-revoke instead.")
+
+    result = certificate_store.file_dispute(
+        certificate_id=certificate_id,
+        reporter_id=caller_id,
+        reporter_email=caller_email,
+        reason=reason
+    )
+
+    if not result["success"]:
+        raise HTTPException(status_code=400, detail=result["message"])
+
+    return result
+
+
+@app.post("/resolve-dispute/{certificate_id}/{dispute_id}")
+async def resolve_dispute_endpoint(
+    certificate_id: str,
+    dispute_id: str,
+    action: str,
+    response_text: str,
+    user: dict = Depends(require_auth)
+):
+    """
+    Resolve a dispute. Only the original certifier can resolve.
+    action: 'dismiss' (with required written response) or 'accept' (self-revoke).
+    """
+    # Only the original certifier can resolve disputes
+    cert = certificate_store.lookup_certificate(certificate_id)
+    if cert is None:
+        raise HTTPException(status_code=404, detail="Certificate not found.")
+
+    caller_id = user.get("sub", "")
+    if cert.get("reviewer_id") != caller_id and cert.get("reviewer_id") != user.get("email", ""):
+        raise HTTPException(status_code=403, detail="Only the original certifier can resolve disputes.")
+
+    if action not in ("dismiss", "accept"):
+        raise HTTPException(status_code=400, detail="Action must be 'dismiss' or 'accept'.")
+
+    if action == "dismiss" and len(response_text.strip()) < 20:
+        raise HTTPException(status_code=400, detail="Dismissal response must be at least 20 characters.")
+
+    result = certificate_store.resolve_dispute(
+        certificate_id=certificate_id,
+        dispute_id=dispute_id,
+        action=action,
+        certifier_response=response_text.strip()
+    )
+
+    if not result["success"]:
+        raise HTTPException(status_code=400, detail=result["message"])
+
+    return result
+
+
+@app.get("/my-certificates")
+async def my_certificates_endpoint(user: dict = Depends(require_auth)):
+    """Get all certificates signed by the current user, with dispute info."""
+    caller_id = user.get("sub", "")
+    caller_email = user.get("email", caller_id)
+
+    # Try both sub and email since older certs may use email
+    certs = certificate_store.get_certificates_by_reviewer(caller_id)
+    if not certs and caller_email != caller_id:
+        certs = certificate_store.get_certificates_by_reviewer(caller_email)
+
+    return {"certificates": certs}
 
 
 #DISABLED — Auth0 handles registration

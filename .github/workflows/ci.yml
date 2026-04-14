@@ -26,6 +26,26 @@ jobs:
           BASE_URL: https://kwiddex.com
         run: bash tests/test_full_stack.sh
 
+  unit-tests:
+    name: Backend Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install fastapi uvicorn python-multipart pillow reportlab PyPDF2 torch torchvision python-jose[cryptography] google-cloud-datastore httpx slowapi pydantic
+
+      - name: Run unit tests
+        working-directory: backend
+        run: python -m unittest unit_tests_api.py -v
+
       - name: Run full stack tests with auth (certificate roundtrip)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
