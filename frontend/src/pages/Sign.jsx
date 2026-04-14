@@ -237,7 +237,7 @@ export default function SignPage() {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
               <Fingerprint className="w-7 h-7 text-white" />
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-base-color">
@@ -278,20 +278,20 @@ export default function SignPage() {
             <CardContent className="p-0">
       
       {!isAuthenticated && (
-        <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 mb-6">
+        <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 mb-6">
           <CardContent className="p-4 flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+              <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
                 Sign in required to certify documents
               </p>
-              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
                 You can browse this page to learn about the certification process. To certify a document, please sign in first.
               </p>
             </div>
             <Button
               size="sm"
-              className="bg-amber-600 hover:bg-amber-700 shrink-0"
+              className="bg-blue-600 hover:bg-blue-700 text-white shrink-0"
               onClick={() => login()}
             >
               Sign In
@@ -326,7 +326,7 @@ export default function SignPage() {
                     <CardTitle className="flex items-center gap-2">
                       <FileText className="w-5 h-5 text-blue-600" /> Uploaded File
                     </CardTitle>
-                    <Button variant="outline" size="sm" onClick={reset}>
+                    <Button variant="outline" size="sm" className="border-border text-foreground" onClick={reset}>
                       Upload Different File
                     </Button>
                   </div>
@@ -390,7 +390,7 @@ export default function SignPage() {
                 <Button
                   onClick={handleCertify}
                   disabled={certifying}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   {certifying ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -399,7 +399,7 @@ export default function SignPage() {
                   )}
                   {certifying ? "Certifying..." : "Certify This Document"}
                 </Button>
-                <Button variant="outline" onClick={reset} disabled={certifying}>
+                <Button variant="outline" className="border-border text-foreground" onClick={reset} disabled={certifying}>
                   Cancel
                 </Button>
               </div>
@@ -505,7 +505,7 @@ export default function SignPage() {
               <div className="flex flex-wrap items-center gap-3">
                 <Button
                   onClick={handleDownload}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Download Certified PDF
@@ -526,7 +526,7 @@ export default function SignPage() {
                   </Button>
                 )}
 
-                <Button variant="outline" onClick={reset}>
+                <Button variant="outline" className="border-border text-foreground" onClick={reset}>
                   Certify Another Document
                 </Button>
               </div>

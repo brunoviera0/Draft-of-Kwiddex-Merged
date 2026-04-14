@@ -15,7 +15,7 @@ import uuid
 import hashlib
 import imgaug.augmenters as iaa
 from typing import Optional
-from auth import create_user, authenticate, get_user_id, get_profile_by_id, create_token, verify_token
+# Old auth removed — handled by Auth0
 from auth0_validator import require_auth as auth0_require_auth
 from certification import certify_document, verify_pdf, certify_pdf, is_certified
 import certificate_store

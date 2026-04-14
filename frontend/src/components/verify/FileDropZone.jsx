@@ -64,7 +64,7 @@ export default function FileDropZone({ onFileSelect, loading, title, description
         <div className="max-w-md mx-auto">
           {loading ? (
             <div className="space-y-4">
-              <div className="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center">
+              <div className="w-16 h-16 mx-auto bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
                 <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
               </div>
               <div>
@@ -75,7 +75,7 @@ export default function FileDropZone({ onFileSelect, loading, title, description
           ) : (
             <div className="space-y-4">
               <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center transition-colors ${
-                dragActive ? "bg-blue-100" : "bg-surface"
+                dragActive ? "bg-blue-100 dark:bg-blue-900/30" : "bg-surface"
               }`}>
                 <FileText className={`w-8 h-8 transition-colors ${
                   dragActive ? "text-blue-600" : "text-gray-400"
@@ -92,7 +92,7 @@ export default function FileDropZone({ onFileSelect, loading, title, description
                 
                 <Button
                   onClick={openFileDialog}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
                   disabled={loading}
                 >
                   <Upload className="w-4 h-4 mr-2" />
