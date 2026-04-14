@@ -40,7 +40,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install fastapi uvicorn python-multipart pillow reportlab PyPDF2 torch torchvision python-jose[cryptography] google-cloud-datastore httpx slowapi pydantic pdf2image imgaug cryptography PyJWT
+          pip install "numpy<2.0" fastapi uvicorn python-multipart pillow reportlab PyPDF2 torch torchvision python-jose[cryptography] google-cloud-datastore httpx slowapi pydantic pdf2image imgaug cryptography PyJWT bcrypt
 
       - name: Run unit tests
         working-directory: backend

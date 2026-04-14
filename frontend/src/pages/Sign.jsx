@@ -511,20 +511,19 @@ export default function SignPage() {
                   Download Certified PDF
                 </Button>
 
-                {user?.email && (
+                <div className="relative group">
                   <Button
                     variant="outline"
-                    onClick={handleSendEmail}
-                    disabled={sendingEmail}
+                    className="border-border text-muted-foreground cursor-not-allowed opacity-60"
+                    disabled
                   >
-                    {sendingEmail ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Mail className="w-4 h-4 mr-2" />
-                    )}
+                    <Mail className="w-4 h-4 mr-2" />
                     Email Certificate Details
                   </Button>
-                )}
+                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-xs bg-card border border-border text-muted-foreground rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                    Email notifications are not yet configured
+                  </span>
+                </div>
 
                 <Button variant="outline" className="border-border text-foreground" onClick={reset}>
                   Certify Another Document
