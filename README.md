@@ -344,8 +344,8 @@ Infrastructure
  
 Live at: https://kwiddex.com
  
-  Single GCP VM (sentiment-prod, 104.154.205.233)
-  GCP Project: sentiment-analysis-379200
+  Single GCP VM (sentiment-prod)
+
  
 Services
  
@@ -356,7 +356,7 @@ Services
  
 Nginx Routing
  
-  / serves static frontend from ~/Draft-of-Kwiddex-Merged/frontend/dist
+  / serves static frontend build
   /api/* proxies to Express on port 3001
   /ml/* proxies to FastAPI on port 8000 (prefix stripped)
  
@@ -368,7 +368,6 @@ SSL
  
 Google Cloud Datastore
  
-  Project: sentiment-analysis-379200
   Kinds: PredictionResult, Certification, CertificateDispute
   No file storage. Metadata only.
  
@@ -406,8 +405,7 @@ GitHub Actions CI (.github/workflows/ci.yml)
  
 ### Config Files
 ```
-Nginx: /etc/nginx/sites-available/kwiddex (copy in docs/nginx-kwiddex.conf)
-Systemd: /etc/systemd/system/kwiddex-*.service (copies in docs/)
+Nginx config and systemd service files are stored in docs/
 ```
  
  
