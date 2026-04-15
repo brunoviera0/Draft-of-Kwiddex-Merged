@@ -301,8 +301,8 @@ Rate Limiting
  
 File Size Limits
  
-  Express: 25MB via multer configuration.
-  FastAPI: 25MB enforced in application code.
+  Express: 50MB via multer configuration.
+  FastAPI: 50MB enforced in application code.
  
  
 CORS

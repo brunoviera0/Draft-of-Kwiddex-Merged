@@ -39,7 +39,7 @@ async def rate_limit_handler(request, exc):
         content={"detail": "Rate limit exceeded. Please wait before trying again."}
     )
 
-MAX_UPLOAD_SIZE = 25 * 1024 * 1024  # 25MB
+MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50MB
 
 app.add_middleware(
     CORSMiddleware,

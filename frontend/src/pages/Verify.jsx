@@ -138,7 +138,7 @@ function VerifyPageContent() {
   const handleFileSelect = (selectedFile) => {
     if (!selectedFile) return;
     if (selectedFile.type !== "application/pdf") { setError("Please select a PDF file only."); return; }
-    if (selectedFile.size > 25 * 1024 * 1024) { setError("File size must be less than 25MB."); return; }
+    if (selectedFile.size > 50 * 1024 * 1024) { setError("File size must be less than 50MB."); return; }
     setFile(selectedFile);
     handleFileAnalysis(selectedFile);
   };

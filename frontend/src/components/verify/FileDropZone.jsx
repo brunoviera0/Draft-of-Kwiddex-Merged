@@ -101,7 +101,7 @@ export default function FileDropZone({ onFileSelect, loading, title, description
               </div>
               
               <div className="text-xs text-muted-foreground space-y-1">
-                <p>• Supports PDF files up to 25MB</p>
+                <p>• Supports PDF files up to 50MB</p>
                 <p>• Secure processing - files are not stored permanently</p>
                 <p>• Metadata extraction and integrity verification</p>
               </div>

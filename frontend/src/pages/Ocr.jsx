@@ -24,8 +24,8 @@ function OcrPageContent() {
       setError("Please select a PDF file only.");
       return;
     }
-    if (selectedFile.size > 25 * 1024 * 1024) {
-      setError("File size must be less than 25MB.");
+    if (selectedFile.size > 50 * 1024 * 1024) {
+      setError("File size must be less than 50MB.");
       return;
     }
 
