@@ -234,7 +234,7 @@ def create_certificate_page(certificate: dict) -> bytes:
         ("Issued:", certificate.get("issued_at", "N/A")),
         ("Document Hash:", certificate.get("document_hash", "N/A")[:32] + "..."),
         ("Confidence:", f"{certificate.get('authenticity_confidence', 0):.1%}"),
-        ("Reviewer:", certificate.get("reviewer_id", "N/A")),
+        ("Certified Using:", certificate.get("reviewer_id", "N/A")),
         ("Reference:", certificate.get("client_reference", "N/A")),
         ("Status:", certificate.get("status", "N/A").upper()),
     ]
