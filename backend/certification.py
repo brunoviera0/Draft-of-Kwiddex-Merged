@@ -215,10 +215,10 @@ def create_certificate_page(certificate: dict) -> bytes:
     
     #header
     c.setFont("Helvetica-Bold", 24)
-    c.drawCentredString(width / 2, height - 1 * inch, "CERTIFICATE OF AUTHENTICITY")
+    c.drawCentredString(width / 2, height - 1 * inch, "CERTIFICATE OF EXAMINATION")
     
     c.setFont("Helvetica", 12)
-    c.drawCentredString(width / 2, height - 1.4 * inch, "Issued by Kwiddex Document Authentication System")
+    c.drawCentredString(width / 2, height - 1.4 * inch, "Issued via Kwiddex Document Analysis Platform")
     
     #line
     c.setStrokeColorRGB(0.2, 0.2, 0.7)
