@@ -652,6 +652,17 @@ async def verify_certificate_endpoint(request: Request, file: UploadFile = File(
             response.issued_at = cert.get("issued_at")
             response.confidence_score = cert.get("authenticity_confidence")
             response.reviewer_id = cert.get("reviewer_id")
+            
+            # Get disputes for this certificate
+            try:
+                cert_id = cert.get("certificate_id", "")
+                disputes = certificate_store.get_disputes_for_certificate(cert_id)
+                response.disputes = disputes
+                response.has_disputes = len(disputes) > 0
+                if any(d["dispute_status"] == "open" for d in disputes):
+                    response.message = f"Certificate is valid but has open disputes. Review dispute details below."
+            except Exception:
+                pass
         
         return response
         
