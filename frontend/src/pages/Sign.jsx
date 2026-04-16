@@ -103,6 +103,7 @@ export default function SignPage() {
       const token = await getToken();
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("reviewer_id", user?.email || user?.id || "Unknown");
 
       const response = await fetch(`${API_BASE}/ml/certify`, {
         method: "POST",
