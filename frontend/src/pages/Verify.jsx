@@ -54,6 +54,59 @@ function VerifyPageContent() {
   const [reportSuccess, setReportSuccess] = useState(false);
   const [showDisputeHistory, setShowDisputeHistory] = useState(false);
 
+  // Resolution state (for certifier)
+  const [resolvingId, setResolvingId] = useState(null);
+  const [resolveAction, setResolveAction] = useState(null);
+  const [resolveText, setResolveText] = useState("");
+  const [resolveSubmitting, setResolveSubmitting] = useState(false);
+  const [resolveError, setResolveError] = useState(null);
+  const [revokeConfirm, setRevokeConfirm] = useState(false);
+  const [revokeSubmitting, setRevokeSubmitting] = useState(false);
+
+  const handleResolveDispute = async (disputeId, action) => {
+    if (action === "dismiss" && resolveText.trim().length < 20) {
+      setResolveError("Dismissal response must be at least 20 characters.");
+      return;
+    }
+    setResolveSubmitting(true);
+    setResolveError(null);
+    try {
+      const token = await getToken();
+      const params = new URLSearchParams({ action, response_text: action === "accept" ? "Dispute accepted. Certificate revoked." : resolveText.trim() });
+      const response = await fetch(
+        `${API_BASE}/ml/resolve-dispute/${certResult.certificate_id}/${disputeId}?${params}`,
+        { method: "POST", headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || "Failed to resolve dispute.");
+      setResolvingId(null);
+      setResolveAction(null);
+      setResolveText("");
+      if (file) verifyCertificate(file);
+    } catch (err) {
+      setResolveError(err.message);
+    }
+    setResolveSubmitting(false);
+  };
+
+  const handleSelfRevoke = async () => {
+    setRevokeSubmitting(true);
+    try {
+      const token = await getToken();
+      const response = await fetch(
+        `${API_BASE}/ml/revoke-certificate/${certResult.certificate_id}`,
+        { method: "POST", headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || "Failed to revoke.");
+      setRevokeConfirm(false);
+      if (file) verifyCertificate(file);
+    } catch (err) {
+      setResolveError(err.message);
+    }
+    setRevokeSubmitting(false);
+  };
+
   const detectEditor = (metadata) => {
     if (!metadata) return null;
     const fields = [metadata.creator, metadata.producer, metadata.application,
@@ -359,14 +412,64 @@ function VerifyPageContent() {
                     )}
 
                     {isOwnCertificate && (
-                      <Card className="border-blue-200 dark:border-blue-800"><CardContent className="py-4">
+                      <Card className="border-blue-200 dark:border-blue-800"><CardContent className="py-4 space-y-4">
                         <div className="flex items-start gap-3">
                           <Info className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
-                          <div>
+                          <div className="flex-1">
                             <p className="text-sm font-medium text-base-color">You certified this document.</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">To revoke this certificate or respond to disputes, visit your certificates dashboard (coming soon).</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">You can self-revoke this certificate or respond to disputes below.</p>
                           </div>
+                          {certResult.certificate_active && !revokeConfirm && (
+                            <Button variant="outline" size="sm" className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/30 shrink-0" onClick={() => setRevokeConfirm(true)}>Self-Revoke</Button>
+                          )}
                         </div>
+                        {revokeConfirm && (
+                          <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20 p-4 space-y-3">
+                            <p className="text-sm font-medium text-red-800 dark:text-red-300">Are you sure you want to revoke this certificate? This is permanent.</p>
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted" onClick={() => setRevokeConfirm(false)}>Cancel</Button>
+                              <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white" onClick={handleSelfRevoke} disabled={revokeSubmitting}>{revokeSubmitting ? "Revoking..." : "Confirm Revoke"}</Button>
+                            </div>
+                          </div>
+                        )}
+                        {openDisputes.length > 0 && (
+                          <div className="space-y-3 pt-3 border-t border-border">
+                            <p className="text-sm font-semibold text-base-color">Open Disputes Requiring Your Response</p>
+                            {openDisputes.map((dispute) => (
+                              <div key={dispute.dispute_id} className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/10 p-4">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">Open</Badge>
+                                  <span className="text-xs text-muted-foreground">from {dispute.reporter_email}</span>
+                                </div>
+                                <p className="text-sm text-base-color mb-3">{dispute.reason}</p>
+                                {resolvingId === dispute.dispute_id ? (
+                                  <div className="space-y-2">
+                                    {resolveAction === "dismiss" && (
+                                      <>
+                                        <p className="text-xs text-muted-foreground">Write your response explaining why you are dismissing this dispute (minimum 20 characters).</p>
+                                        <textarea value={resolveText} onChange={(e) => { setResolveText(e.target.value); setResolveError(null); }} placeholder="Explain why this dispute is being dismissed..." className="w-full min-h-[80px] border border-border rounded-lg p-3 text-sm bg-card text-base-color resize-vertical focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                        <p className={`text-xs ${resolveText.trim().length >= 20 ? "text-green-600" : "text-muted-foreground"}`}>{resolveText.trim().length}/20 characters minimum</p>
+                                      </>
+                                    )}
+                                    {resolveAction === "accept" && (
+                                      <p className="text-sm font-medium text-red-800 dark:text-red-300">Accepting this dispute will permanently revoke your certificate. This cannot be undone.</p>
+                                    )}
+                                    <div className="flex gap-2">
+                                      <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted" onClick={() => { setResolvingId(null); setResolveAction(null); setResolveText(""); setResolveError(null); }}>Cancel</Button>
+                                      <Button size="sm" className={resolveAction === "accept" ? "bg-red-600 hover:bg-red-700 text-white" : "bg-blue-600 hover:bg-blue-700 text-white"} onClick={() => handleResolveDispute(dispute.dispute_id, resolveAction)} disabled={resolveSubmitting || (resolveAction === "dismiss" && resolveText.trim().length < 20)}>{resolveSubmitting ? "Submitting..." : resolveAction === "accept" ? "Confirm Revoke" : "Submit Dismissal"}</Button>
+                                    </div>
+                                    {resolveError && <p className="text-xs text-red-600 dark:text-red-400">{resolveError}</p>}
+                                  </div>
+                                ) : (
+                                  <div className="flex gap-2">
+                                    <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted" onClick={() => { setResolvingId(dispute.dispute_id); setResolveAction("dismiss"); }}>Dismiss with Response</Button>
+                                    <Button variant="outline" size="sm" className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/30" onClick={() => { setResolvingId(dispute.dispute_id); setResolveAction("accept"); }}>Accept & Revoke</Button>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </CardContent></Card>
                     )}
                   </motion.div>
