@@ -17,7 +17,7 @@ function App() {
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<Home />} />
-            <Route path="/analyze" element={<Physical embedded />} />
+            <Route path="/analyze" element={<Navigate to="/sign" replace />} />
             <Route path="/verify" element={<VerifyPage />} />
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/sign" element={<SignPage />} />

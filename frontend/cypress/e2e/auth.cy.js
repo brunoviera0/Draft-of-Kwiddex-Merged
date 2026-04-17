@@ -14,7 +14,7 @@ describe("Auth0 Authentication", () => {
     cy.contains("Sign in").should("be.visible").and("not.be.disabled")
   })
 
-  it("Sign page is accessible without login", () => {
+  it("Certify page is accessible without login", () => {
     cy.visit("/sign")
     cy.url().should("include", "/sign")
     cy.contains("Sign in required").should("be.visible")

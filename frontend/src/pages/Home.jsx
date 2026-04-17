@@ -2,7 +2,6 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  ScanLine,
   Fingerprint,
   FileCheck,
   Scale,
@@ -27,25 +26,12 @@ const fadeUp = {
 
 const features = [
   {
-    title: "Analyze",
-    path: "/analyze",
-    icon: ScanLine,
-    color: "from-blue-500/20 to-blue-600/5",
-    accent: "text-blue-400",
-    border: "border-blue-500/20 hover:border-blue-500/40",
-    description:
-      "Upload a document image or PDF to run it through our ResNet18 CNN with Monte Carlo inference. The model performs 30 augmented analyses and returns a confidence score with 95% confidence interval, agreement rate, and standard deviation.",
-    howTo:
-      "Drag and drop or select a PDF or image file. Click Check document and wait for the Monte Carlo analysis to complete. No login required.",
-    details: ["ResNet18 CNN", "30 Monte Carlo samples", "95% confidence interval", "No documents stored"],
-  },
-  {
     title: "Certify",
     path: "/sign",
     icon: Fingerprint,
-    color: "from-amber-500/20 to-amber-600/5",
+    color: "from-blue-500/20 to-blue-600/5",
     accent: "text-blue-300",
-    border: "border-blue-500/20 hover:border-amber-500/40",
+    border: "border-blue-500/20 hover:border-blue-500/40",
     description:
       "After analyzing a document, certify it with a Kwiddex RSA-signed certificate. The certificate is embedded in the PDF metadata along with a visible certificate page. The certified file hash is stored for future integrity verification.",
     howTo:
@@ -56,8 +42,8 @@ const features = [
     title: "Verify",
     path: "/verify",
     icon: FileCheck,
-    color: "from-emerald-500/20 to-emerald-600/5",
-    accent: "text-emerald-400",
+    color: "from-emerald-500/15 to-emerald-500/5",
+    accent: "text-emerald-600",
     border: "border-emerald-500/20 hover:border-emerald-500/40",
     description:
       "Upload any PDF to check if it contains a valid Kwiddex certificate. The system extracts the embedded certificate and RSA signature, verifies the signature, checks for revocation, and compares the file hash to detect post-certification modifications.",
@@ -69,8 +55,8 @@ const features = [
     title: "Compare",
     path: "/compare",
     icon: Scale,
-    color: "from-purple-500/20 to-purple-600/5",
-    accent: "text-purple-400",
+    color: "from-purple-500/20 to-purple-500/5",
+    accent: "text-purple-500",
     border: "border-purple-500/20 hover:border-purple-500/40",
     description:
       "Upload two document images for side-by-side spectral analysis using the LWSP (Linear Wave Stochastic Process) engine. Both images are transformed via 2D FFT and compared using Power Spectral Density cross-correlation to produce a similarity score.",
@@ -139,34 +125,11 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
-            Analyze document authenticity with deep learning, certify documents
-            with RSA-signed certificates, verify certification integrity, and
-            compare documents using spectral frequency analysis.
+            Certify documents with AI-powered analysis and RSA-signed certificates,
+            verify certification integrity, and compare documents using
+            spectral frequency analysis.
           </motion.p>
 
-          <motion.div
-            className="flex flex-col sm:flex-row gap-4 justify-center"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-          >
-            <Link to="/analyze">
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8">
-                <ScanLine className="w-5 h-5 mr-2" />
-                Start Analyzing
-              </Button>
-            </Link>
-            {!isAuthenticated && (
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-blue-400/30 hover:border-blue-400/60 text-blue-400"
-                onClick={() => login()}
-              >
-                Sign In to Certify
-              </Button>
-            )}
-          </motion.div>
         </div>
       </section>
 
@@ -180,12 +143,12 @@ export default function Home() {
         >
           <h2 className="text-2xl sm:text-3xl font-bold text-base-color mb-3">Features</h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Four integrated tools for forensic document analysis, certification,
+            Three integrated tools for forensic document certification,
             verification, and comparison.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto [&>*:last-child]:md:col-span-2 [&>*:last-child]:md:max-w-[calc(50%-1rem)] [&>*:last-child]:md:mx-auto">
           {features.map((feature, i) => (
             <motion.div
               key={feature.title}
@@ -293,9 +256,9 @@ export default function Home() {
             <p className="text-muted-foreground mb-6">
               Upload a document to analyze, certify, verify, or compare. No account required for analysis, verification, or comparison.
             </p>
-            <Link to="/analyze">
+            <Link to="/sign">
               <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white">
-                Go to Analyzer
+                Get Started
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>

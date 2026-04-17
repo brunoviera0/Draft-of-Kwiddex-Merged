@@ -224,8 +224,8 @@ function VerifyPageContent() {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
-              <ShieldCheck className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
+              <ShieldCheck className="w-7 h-7 text-emerald-600" />
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-base-color">Verify & Inspect Document</h1>
           </div>
@@ -306,13 +306,13 @@ function VerifyPageContent() {
                     </Card>
 
                     {certResult.has_disputes && openDisputes.length > 0 && (
-                      <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
+                      <Card className="border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800">
                         <CardContent className="py-4">
                           <div className="flex items-start gap-3">
-                            <Flag className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                            <Flag className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
                             <div>
-                              <p className="font-semibold text-amber-800 dark:text-amber-300">This certificate has {openDisputes.length} open dispute{openDisputes.length > 1 ? "s" : ""}</p>
-                              <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">One or more parties have disputed this certification. The certificate remains technically valid. Disputes are informational annotations. Review details below.</p>
+                              <p className="font-semibold text-red-800 dark:text-red-300">This certificate has {openDisputes.length} open dispute{openDisputes.length > 1 ? "s" : ""}</p>
+                              <p className="text-sm text-red-700 dark:text-red-400 mt-1">One or more parties have disputed this certification. The certificate remains technically valid. Disputes are informational annotations. Review details below.</p>
                             </div>
                           </div>
                         </CardContent>
@@ -332,7 +332,7 @@ function VerifyPageContent() {
                           {certResult.signature_valid != null && <Badge variant="secondary" className={certResult.signature_valid ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"}>Signature {certResult.signature_valid ? "Valid" : "Invalid"}</Badge>}
                           {certResult.document_intact != null && <Badge variant="secondary" className={certResult.document_intact ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"}>Document {certResult.document_intact ? "Intact" : "Modified"}</Badge>}
                           {certResult.certificate_active != null && <Badge variant="secondary" className={certResult.certificate_active ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"}>{certResult.certificate_active ? "Active" : "Revoked"}</Badge>}
-                          {certResult.has_disputes && <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">{openDisputes.length} Open{dismissedDisputes.length > 0 ? `, ${dismissedDisputes.length} Dismissed` : ""}</Badge>}
+                          {certResult.has_disputes && <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">{openDisputes.length} Open{dismissedDisputes.length > 0 ? `, ${dismissedDisputes.length} Dismissed` : ""}</Badge>}
                         </div>
                       </CardContent>
                     </Card>
@@ -341,16 +341,16 @@ function VerifyPageContent() {
                       <Card>
                         <CardHeader className="pb-3">
                           <button className="flex items-center justify-between w-full" onClick={() => setShowDisputeHistory(!showDisputeHistory)}>
-                            <CardTitle className="flex items-center gap-2 text-base"><MessageSquare className="w-5 h-5 text-amber-600" /> Dispute History ({disputes.length})</CardTitle>
+                            <CardTitle className="flex items-center gap-2 text-base"><MessageSquare className="w-5 h-5 text-red-600" /> Dispute History ({disputes.length})</CardTitle>
                             {showDisputeHistory ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                           </button>
                         </CardHeader>
                         {showDisputeHistory && (
                           <CardContent className="space-y-4">
                             {disputes.map((dispute, idx) => (
-                              <div key={dispute.dispute_id || idx} className={`rounded-lg border p-4 ${dispute.dispute_status === "open" ? "border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/10" : dispute.dispute_status === "dismissed" ? "border-border bg-muted/30" : "border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/10"}`}>
+                              <div key={dispute.dispute_id || idx} className={`rounded-lg border p-4 ${dispute.dispute_status === "open" ? "border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/10" : dispute.dispute_status === "dismissed" ? "border-border bg-muted/30" : "border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/10"}`}>
                                 <div className="flex items-center gap-2 mb-2">
-                                  <Badge variant="secondary" className={dispute.dispute_status === "open" ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400" : dispute.dispute_status === "dismissed" ? "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300" : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"}>
+                                  <Badge variant="secondary" className={dispute.dispute_status === "open" ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400" : dispute.dispute_status === "dismissed" ? "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300" : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"}>
                                     {dispute.dispute_status === "open" ? "Open" : dispute.dispute_status === "dismissed" ? "Dismissed by Certifier" : "Accepted (Revoked)"}
                                   </Badge>
                                   <span className="text-xs text-muted-foreground">Filed {formatDate(dispute.filed_at)}</span>
@@ -393,7 +393,7 @@ function VerifyPageContent() {
                           </div>
                         ) : (
                           <div className="space-y-3">
-                            <div className="flex items-center gap-2"><Flag className="w-5 h-5 text-amber-600" /><p className="text-sm font-semibold text-base-color">File a Dispute</p></div>
+                            <div className="flex items-center gap-2"><Flag className="w-5 h-5 text-red-600" /><p className="text-sm font-semibold text-base-color">File a Dispute</p></div>
                             <p className="text-xs text-muted-foreground">Provide a detailed explanation. Your identity and reason will be permanently attached to this certificate. Minimum 50 characters.</p>
                             <textarea value={reportReason} onChange={(e) => { setReportReason(e.target.value); setReportError(null); }} placeholder="Explain why you believe this certification is incorrect..." className="w-full min-h-[120px] border border-border rounded-lg p-3 text-sm bg-card text-base-color resize-vertical focus:outline-none focus:ring-2 focus:ring-blue-500" />
                             <div className="flex items-center justify-between">
@@ -436,9 +436,9 @@ function VerifyPageContent() {
                           <div className="space-y-3 pt-3 border-t border-border">
                             <p className="text-sm font-semibold text-base-color">Open Disputes Requiring Your Response</p>
                             {openDisputes.map((dispute) => (
-                              <div key={dispute.dispute_id} className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/10 p-4">
+                              <div key={dispute.dispute_id} className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/10 p-4">
                                 <div className="flex items-center gap-2 mb-2">
-                                  <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">Open</Badge>
+                                  <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">Open</Badge>
                                   <span className="text-xs text-muted-foreground">from {dispute.reporter_email}</span>
                                 </div>
                                 <p className="text-sm text-base-color mb-3">{dispute.reason}</p>

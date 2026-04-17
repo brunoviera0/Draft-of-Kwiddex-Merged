@@ -43,10 +43,6 @@ export default function SignPage() {
 
   // Step 1: Analyze the document
   const handleFileSelect = async (selectedFile) => {
-    if (!isAuthenticated) {
-      login();
-      return;
-    }
     if (!selectedFile) return;
     if (selectedFile.type !== "application/pdf") {
       setError("Please select a PDF file only.");
@@ -238,7 +234,7 @@ export default function SignPage() {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
               <Fingerprint className="w-7 h-7 text-white" />
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-base-color">
@@ -246,7 +242,7 @@ export default function SignPage() {
             </h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Upload a PDF to run it through our CNN analysis. Review the authenticity results, then choose to certify the document with a Kwiddex-signed certificate.
+            Upload a PDF for document authenticity analysis. Review the results, then certify with a Kwiddex-signed certificate.
           </p>
           {user?.email && (
             <p className="mt-2 text-sm text-muted-foreground">
@@ -278,28 +274,7 @@ export default function SignPage() {
           <Card className="border-2 border-dashed border-border hover:border-green-300 transition-colors">
             <CardContent className="p-0">
       
-      {!isAuthenticated && (
-        <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 mb-6">
-          <CardContent className="p-4 flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                Sign in required to certify documents
-              </p>
-              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                You can browse this page to learn about the certification process. To certify a document, please sign in first.
-              </p>
-            </div>
-            <Button
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white shrink-0"
-              onClick={() => login()}
-            >
-              Sign In
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+
         <FileDropZone onFileSelect={handleFileSelect} loading={analyzing} title="Upload PDF for Certification" description="Drag and drop your PDF here to analyze and certify" acceptLabel="Choose PDF File" />
               {analyzing && (
                 <div className="px-6 pb-6 text-center">
@@ -388,6 +363,15 @@ export default function SignPage() {
 
               {/* Certify action */}
               <div className="flex flex-wrap items-center gap-3">
+                {!isAuthenticated ? (
+                  <Button
+                    onClick={() => login()}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <ShieldCheck className="w-4 h-4 mr-2" />
+                    Sign in to Certify
+                  </Button>
+                ) : (
                 <Button
                   onClick={handleCertify}
                   disabled={certifying}
@@ -400,6 +384,7 @@ export default function SignPage() {
                   )}
                   {certifying ? "Certifying..." : "Certify This Document"}
                 </Button>
+                )}
                 <Button variant="outline" className="border-border text-foreground" onClick={reset} disabled={certifying}>
                   Cancel
                 </Button>

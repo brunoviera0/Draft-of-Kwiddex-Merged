@@ -893,7 +893,7 @@ function CompareTab() {
                 step="0.1"
                 value={highCut}
                 onChange={(e) => setHighCut(parseFloat(e.target.value))}
-                className="w-full accent-amber-600"
+                className="w-full accent-blue-600"
               />
               <div className="flex justify-between text-xs text-muted-foreground mt-1">
                 <span>More detail (noise)</span>
@@ -1067,7 +1067,7 @@ export default function ComparePage() {
         {/* Header */}
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-3 mb-3">
-            <div className="w-12 h-12 bg-blue-600/10 rounded-xl flex items-center justify-center text-2xl">
+            <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center text-2xl">
               ⚖️
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-base-color">

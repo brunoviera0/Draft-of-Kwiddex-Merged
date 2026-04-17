@@ -1,6 +1,6 @@
 describe("CNN Scoring", () => {
   it("uploads image and shows results", () => {
-    cy.visit("/analyze")
+    cy.visit("/sign")
     cy.contains("Physical document checks").should("be.visible")
 
     cy.fixture("test-document.png", null).then((img) => {
@@ -16,7 +16,7 @@ describe("CNN Scoring", () => {
   })
 
   it("can reset after scoring", () => {
-    cy.visit("/analyze")
+    cy.visit("/sign")
 
     cy.fixture("test-document.png", null).then((img) => {
       cy.get('input[type="file"]').first().selectFile(

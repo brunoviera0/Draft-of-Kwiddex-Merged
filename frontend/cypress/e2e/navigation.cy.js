@@ -7,8 +7,8 @@ describe("Navigation", () => {
 
   it("nav links to Analyze work", () => {
     cy.visit("/")
-    cy.contains("Analyze").click()
-    cy.url().should("include", "/analyze")
+    cy.contains("Certify").click()
+    cy.url().should("include", "/sign")
     cy.contains("Physical document checks").should("be.visible")
   })
 
@@ -33,7 +33,7 @@ describe("Navigation", () => {
   it("home page feature cards link to correct pages", () => {
     cy.visit("/")
     cy.contains("Start Analyzing").click()
-    cy.url().should("include", "/analyze")
+    cy.url().should("include", "/sign")
   })
 
   it("compare page shows LWSP description", () => {
