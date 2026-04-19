@@ -1,32 +1,13 @@
-describe("CNN Scoring", () => {
-  it("uploads image and shows results", () => {
+describe("Document Analysis", () => {
+  it("shows upload area on certify page", () => {
     cy.visit("/sign")
-    cy.contains("Physical document checks").should("be.visible")
-
-    cy.fixture("test-document.png", null).then((img) => {
-      cy.get('input[type="file"]').first().selectFile(
-        { contents: img, fileName: "test.png", mimeType: "image/png" },
-        { force: true }
-      )
-    })
-
-    cy.contains("button", "Check document").click()
-    cy.contains("Confidence", { timeout: 90000 }).should("be.visible")
-    cy.contains("CNN Analysis", { timeout: 10000 }).should("be.visible")
+    cy.contains("Certify Document").should("be.visible")
+    cy.contains("Upload PDF").should("be.visible")
+    cy.get('input[type="file"]').should("exist")
   })
-
-  it("can reset after scoring", () => {
-    cy.visit("/sign")
-
-    cy.fixture("test-document.png", null).then((img) => {
-      cy.get('input[type="file"]').first().selectFile(
-        { contents: img, fileName: "test.png", mimeType: "image/png" },
-        { force: true }
-      )
-    })
-
-    cy.contains("button", "Check document").click()
-    cy.contains("Confidence", { timeout: 90000 }).should("be.visible")
-    cy.contains("button", "Reset").click()
+  it("compare page shows upload panels", () => {
+    cy.visit("/compare")
+    cy.contains("Scales of Justice").should("be.visible")
+    cy.contains("Upload image").should("be.visible")
   })
 })

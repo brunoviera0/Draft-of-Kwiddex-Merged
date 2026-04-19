@@ -60,7 +60,7 @@ export default function Layout() {
                 <button
                   type="button"
                   onClick={logout}
-                  className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                  className="text-xs font-medium text-muted-foreground hover:text-foreground bg-transparent border-none shadow-none p-0 focus:outline-none focus:ring-0 active:bg-transparent"
                 >
                   Log out
                 </button>

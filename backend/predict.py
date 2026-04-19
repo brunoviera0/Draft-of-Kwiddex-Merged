@@ -72,13 +72,11 @@ def load_model():
     model = resnet18(weights=None)
     
     #match saved model (sequential with dropout)
-    model.fc = torch.nn.Sequential(
-        torch.nn.Dropout(0.5),
-        torch.nn.Linear(model.fc.in_features, 2)
-    )
+    model.fc = torch.nn.Linear(model.fc.in_features, 2)
     
     #saved weights
-    state_dict = torch.load(MODEL_LOCAL_PATH, map_location=torch.device('cpu'))
+    checkpoint = torch.load(MODEL_LOCAL_PATH, map_location=torch.device("cpu"))
+    state_dict = checkpoint["model_state"] if isinstance(checkpoint, dict) and "model_state" in checkpoint else checkpoint
     model.load_state_dict(state_dict)
     
     model.eval()

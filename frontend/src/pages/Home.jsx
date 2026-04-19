@@ -59,10 +59,10 @@ const features = [
     accent: "text-purple-500",
     border: "border-purple-500/20 hover:border-purple-500/40",
     description:
-      "Upload two document images for side-by-side spectral analysis using the LWSP (Linear Wave Stochastic Process) engine. Both images are transformed via 2D FFT and compared using Power Spectral Density cross-correlation to produce a similarity score.",
+      "Upload two document images for side-by-side multi-region forensic comparison. The engine normalizes, aligns, and analyzes artwork, text, borders, and print texture to produce a detailed similarity report with verdict.",
     howTo:
-      "Upload a questioned document and a reference document. Adjust the high-cut filter to control detail level. Click Compare to run the spectral analysis. Also includes an OCR tab for text extraction from PDFs.",
-    details: ["2D Fast Fourier Transform", "PSD cross-correlation", "Adjustable filtering", "Runs client-side"],
+      "Upload a reference and compared document image. Adjust alignment radius and brightness normalization. Click Compare to run the multi-region analysis.",
+    details: ["Multi-region analysis", "Alignment + normalization", "Heatmap + micro regions", "Runs client-side"],
   },
 ];
 
