@@ -1,3 +1,4 @@
+import KwiddexLogo from "@/assets/Kwiddex_logo.png";
 import jsPDF from "jspdf";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -478,11 +479,13 @@ function CompareTab() {
   const handleCompare = () => {
     if (!entry.imgQ || !entry.imgR) return;
     setComputing(true);
-    setTimeout(() => {
-      try { updateEntry("results", runV4Comparison(entry.imgQ, entry.imgR, alignRadius, doBrightness)); }
-      catch (err) { console.error("Comparison failed:", err); }
-      setComputing(false);
-    }, 50);
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        try { updateEntry("results", runV4Comparison(entry.imgQ, entry.imgR, alignRadius, doBrightness)); }
+        catch (err) { console.error("Comparison failed:", err); }
+        setComputing(false);
+      }, 500);
+    });
   };
 
   const addEntry = () => { setEntries((prev) => [...prev, createBlankEntry()]); setCurrentIdx(entries.length); };
@@ -567,37 +570,9 @@ function CompareTab() {
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="pb-3"><CardTitle className="text-base">Difference heatmap</CardTitle></CardHeader>
-            <CardContent>
-              <CanvasDisplay imageData={r.heatmap} />
-              <p className="text-xs text-muted-foreground mt-2">Blue = similar. Red = different.</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3"><CardTitle className="text-base">Normalized images</CardTitle></CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <CanvasDisplay imageData={r.refNorm} label="Reference (normalized)" />
-                <CanvasDisplay imageData={r.cmpNorm} label="Compared (normalized)" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3"><CardTitle className="text-base">Micro region analysis</CardTitle></CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <CanvasDisplay imageData={r.microRegions.nameRef} label="Name/HP (ref)" />
-                <CanvasDisplay imageData={r.microRegions.nameCmp} label="Name/HP (cmp)" />
-                <CanvasDisplay imageData={r.microRegions.artRef} label="Art (ref)" />
-                <CanvasDisplay imageData={r.microRegions.artCmp} label="Art (cmp)" />
-                <CanvasDisplay imageData={r.microRegions.textRef} label="Text (ref)" />
-                <CanvasDisplay imageData={r.microRegions.textCmp} label="Text (cmp)" />
-                <CanvasDisplay imageData={r.microRegions.bottomRef} label="Bottom (ref)" />
-                <CanvasDisplay imageData={r.microRegions.bottomCmp} label="Bottom (cmp)" />
-              </div>
-            </CardContent>
-          </Card>
+
+
+
         </>
       )}
 
@@ -617,22 +592,27 @@ function CompareTab() {
             if (!entry.imgQ || !entry.imgR) return;
             if (!entry.filename.trim()) return;
             const r = entry.results;
+            const logoImg = new Image();
+            logoImg.src = KwiddexLogo;
+            logoImg.onload = () => {
             const canvas = document.createElement("canvas");
-            const totalW = 600, totalH = 900;
+            const totalW = 600, totalH = 600;
             canvas.width = totalW; canvas.height = totalH;
             const ctx = canvas.getContext("2d");
-            ctx.fillStyle = "#111"; ctx.fillRect(0, 0, totalW, totalH);
-            ctx.fillStyle = "#7C3AED"; ctx.fillRect(0, 0, totalW, 56);
-            ctx.fillStyle = "#fff"; ctx.font = "bold 20px sans-serif"; ctx.textAlign = "center";
-            ctx.fillText("Kwiddex Document Comparison Report", totalW/2, 36);
-            ctx.fillStyle = "#ccc"; ctx.font = "13px sans-serif"; ctx.textAlign = "left";
-            ctx.fillText("Case: " + entry.filename, 16, 78);
-            ctx.fillText("Date: " + new Date().toLocaleString(), 16, 96);
+            ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, totalW, totalH);
+            ctx.fillStyle = "#2563EB"; ctx.fillRect(0, 0, totalW, 72);
+            const logoH = 40; const logoW = logoH * (logoImg.width / logoImg.height);
+            ctx.drawImage(logoImg, (totalW - logoW) / 2, 4, logoW, logoH);
+            ctx.fillStyle = "#fff"; ctx.font = "15px sans-serif"; ctx.textAlign = "center";
+            ctx.fillText("Document Comparison Report", totalW/2, 62);
+            ctx.fillStyle = "#334155"; ctx.font = "13px sans-serif"; ctx.textAlign = "left";
+            ctx.fillText("Case: " + entry.filename, 16, 94);
+            ctx.fillText("Date: " + new Date().toLocaleString(), 16, 112);
             if (r) {
               ctx.fillStyle = "#fff"; ctx.font = "bold 28px sans-serif"; ctx.textAlign = "center";
               const vc = r.verdictType === "good" ? "#10B981" : r.verdictType === "bad" ? "#EF4444" : "#F59E0B";
               ctx.fillStyle = vc;
-              ctx.fillText(r.verdict + " (" + r.finalScore.toFixed(1) + ")", totalW/2, 135);
+              ctx.fillText(r.verdict + " (" + r.finalScore.toFixed(1) + ")", totalW/2, 150);
               ctx.fillStyle = "#aaa"; ctx.font = "12px sans-serif"; ctx.textAlign = "left";
               const stats = [
                 ["Artwork FFT", r.artFft.toFixed(1)], ["Artwork spatial", r.artSpatial.toFixed(1)],
@@ -640,32 +620,27 @@ function CompareTab() {
                 ["Micro analysis", r.micro.toFixed(1)], ["Dot pattern", r.dot.toFixed(1)],
                 ["Sharpness", r.sharpDelta.toFixed(1)], ["Best shift", r.bestShift]
               ];
-              let sy = 170;
+              let sy = 185;
               for (const [k, v] of stats) {
-                ctx.fillStyle = "#888"; ctx.fillText(k, 40, sy);
-                ctx.fillStyle = "#fff"; ctx.font = "bold 12px sans-serif"; ctx.fillText(v, 250, sy);
+                ctx.fillStyle = "#64748B"; ctx.fillText(k, 40, sy);
+                ctx.fillStyle = "#0F172A"; ctx.font = "bold 12px sans-serif"; ctx.fillText(v, 250, sy);
                 ctx.font = "12px sans-serif"; sy += 22;
               }
-              if (r.heatmap) {
-                const hc = document.createElement("canvas");
-                hc.width = r.heatmap.width; hc.height = r.heatmap.height;
-                hc.getContext("2d").putImageData(r.heatmap, 0, 0);
-                ctx.fillStyle = "#fff"; ctx.font = "bold 13px sans-serif";
-                ctx.fillText("Difference Heatmap", 40, sy + 15); sy += 25;
-                ctx.drawImage(hc, 40, sy, totalW - 80, 300);
-              }
+
+
             }
             if (entry.notes.trim()) {
               ctx.fillStyle = "#ccc"; ctx.font = "12px sans-serif"; ctx.textAlign = "left";
               ctx.fillText("Notes: " + entry.notes.slice(0, 120), 16, totalH - 60);
             }
-            ctx.fillStyle = "#666"; ctx.font = "10px sans-serif"; ctx.textAlign = "center";
-            ctx.fillText("Generated by Kwiddex — kwiddex.com", totalW/2, totalH - 12);
+            ctx.fillStyle = "#94A3B8"; ctx.font = "10px sans-serif"; ctx.textAlign = "center";
+            ctx.fillText("Generated by Kwiddex | kwiddex.com", totalW/2, totalH - 12);
             const link = document.createElement("a");
             const imgData = canvas.toDataURL("image/png");
             const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: [totalW, totalH] });
             pdf.addImage(imgData, "PNG", 0, 0, totalW, totalH);
             pdf.save(entry.filename.trim().replace(/\s+/g, "_") + "_report.pdf");
+            };
           }}>
             <Download className="w-4 h-4 mr-2" />Download report
           </Button>
