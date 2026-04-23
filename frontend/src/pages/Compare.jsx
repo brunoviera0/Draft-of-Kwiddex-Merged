@@ -596,7 +596,7 @@ function CompareTab() {
             logoImg.src = KwiddexLogo;
             logoImg.onload = () => {
             const canvas = document.createElement("canvas");
-            const totalW = 600, totalH = 600;
+            const totalW = 600, totalH = 900;
             canvas.width = totalW; canvas.height = totalH;
             const ctx = canvas.getContext("2d");
             ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, totalW, totalH);
@@ -608,6 +608,7 @@ function CompareTab() {
             ctx.fillStyle = "#334155"; ctx.font = "13px sans-serif"; ctx.textAlign = "left";
             ctx.fillText("Case: " + entry.filename, 16, 94);
             ctx.fillText("Date: " + new Date().toLocaleString(), 16, 112);
+            let sy = 185;
             if (r) {
               ctx.fillStyle = "#fff"; ctx.font = "bold 28px sans-serif"; ctx.textAlign = "center";
               const vc = r.verdictType === "good" ? "#10B981" : r.verdictType === "bad" ? "#EF4444" : "#F59E0B";
@@ -620,7 +621,7 @@ function CompareTab() {
                 ["Micro analysis", r.micro.toFixed(1)], ["Dot pattern", r.dot.toFixed(1)],
                 ["Sharpness", r.sharpDelta.toFixed(1)], ["Best shift", r.bestShift]
               ];
-              let sy = 185;
+              sy = 185;
               for (const [k, v] of stats) {
                 ctx.fillStyle = "#64748B"; ctx.fillText(k, 40, sy);
                 ctx.fillStyle = "#0F172A"; ctx.font = "bold 12px sans-serif"; ctx.fillText(v, 250, sy);
@@ -629,6 +630,20 @@ function CompareTab() {
 
 
             }
+            // Draw reference and compared images
+            ctx.fillStyle = "#0F172A"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "left";
+            ctx.fillText("Reference", 40, sy + 15);
+            ctx.fillText("Compared", 310, sy + 15);
+            sy += 25;
+            const drawImg = (img, x, y, maxW, maxH) => {
+              const sc = Math.min(maxW / img.width, maxH / img.height);
+              const dw = img.width * sc, dh = img.height * sc;
+              ctx.drawImage(img, x, y, dw, dh);
+            };
+            if (entry.imgQ) drawImg(entry.imgQ, 40, sy, 250, 200);
+            if (entry.imgR) drawImg(entry.imgR, 310, sy, 250, 200);
+            sy += 210;
+
             if (entry.notes.trim()) {
               ctx.fillStyle = "#ccc"; ctx.font = "12px sans-serif"; ctx.textAlign = "left";
               ctx.fillText("Notes: " + entry.notes.slice(0, 120), 16, totalH - 60);

@@ -35,6 +35,13 @@ export default function AboutPage() {
             </section>
             <section>
               <h2 className="text-xl font-semibold text-base-color mb-2">
+                Principal Advisor
+              </h2>
+              <p className="leading-relaxed">Randall Roth</p>
+            </section>
+
+            <section>
+              <h2 className="text-xl font-semibold text-base-color mb-2">
                 Project Leads and Developers
               </h2>
               <ul className="list-disc list-inside space-y-2">
