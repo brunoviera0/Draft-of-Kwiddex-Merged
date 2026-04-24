@@ -74,7 +74,7 @@ def load_model():
     #match saved model (sequential with dropout)
     in_features = model.fc.in_features
     model.fc = torch.nn.Sequential(
-        torch.nn.Dropout(0.7),
+        torch.nn.Dropout(0.1),
         torch.nn.Linear(in_features, 2)
     )
     
@@ -304,11 +304,15 @@ def monte_carlo_inference(image: Image.Image, num_samples: int = 30) -> dict:
     all_predictions = []
     all_probabilities = []
     
+    model.eval()
+    for m in model.modules():
+        if isinstance(m, torch.nn.Dropout):
+            m.train()
     with torch.no_grad():
         for aug_img in augmented_images:
             processed = preprocess_image(aug_img)
             outputs = model(processed)
-            probs = torch.nn.functional.softmax(outputs, dim=1)
+            probs = torch.nn.functional.softmax(outputs / 4.0, dim=1)
             probs_np = probs.cpu().numpy()[0]
             all_predictions.append(int(np.argmax(probs_np)))
             all_probabilities.append(probs_np)
@@ -369,7 +373,7 @@ async def predict(request: Request, file: UploadFile = File(...)):
         #run inference
         with torch.no_grad():
             outputs = model(processed_image)
-            probabilities = torch.nn.functional.softmax(outputs, dim=1)
+            probabilities = torch.nn.functional.softmax(outputs / 4.0, dim=1)
             probabilities_np = probabilities.cpu().numpy()[0]
         
         #prediction and confidence
