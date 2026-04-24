@@ -505,7 +505,7 @@ function CompareTab() {
         <ImageViewer label="Reference document" image={entry.imgQ} state={entry.stateQ}
           onStateChange={(u)=>{setEntries((prev)=>{const next=[...prev];next[currentIdx]={...next[currentIdx],stateQ:typeof u==="function"?u(next[currentIdx].stateQ):u};return next;});}}
           canvasRef={canvasQRef} onFileSelect={(img)=>{updateEntry("imgQ",img);updateEntry("results",null);}} />
-        <ImageViewer label="Compared document" image={entry.imgR} state={entry.stateR}
+        <ImageViewer label="Questioned document" image={entry.imgR} state={entry.stateR}
           onStateChange={(u)=>{setEntries((prev)=>{const next=[...prev];next[currentIdx]={...next[currentIdx],stateR:typeof u==="function"?u(next[currentIdx].stateR):u};return next;});}}
           canvasRef={canvasRRef} onFileSelect={(img)=>{updateEntry("imgR",img);updateEntry("results",null);}} />
       </div>
@@ -633,7 +633,7 @@ function CompareTab() {
             // Draw reference and compared images
             ctx.fillStyle = "#0F172A"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "left";
             ctx.fillText("Reference", 40, sy + 15);
-            ctx.fillText("Compared", 310, sy + 15);
+            ctx.fillText("Questioned", 310, sy + 15);
             sy += 25;
             const drawImg = (img, x, y, maxW, maxH) => {
               const sc = Math.min(maxW / img.width, maxH / img.height);
