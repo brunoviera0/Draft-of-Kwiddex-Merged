@@ -72,11 +72,19 @@ def load_model():
     model = resnet18(weights=None)
     
     #match saved model (sequential with dropout)
-    model.fc = torch.nn.Linear(model.fc.in_features, 2)
+    in_features = model.fc.in_features
+    model.fc = torch.nn.Sequential(
+        torch.nn.Dropout(0.7),
+        torch.nn.Linear(in_features, 2)
+    )
     
     #saved weights
     checkpoint = torch.load(MODEL_LOCAL_PATH, map_location=torch.device("cpu"))
     state_dict = checkpoint["model_state"] if isinstance(checkpoint, dict) and "model_state" in checkpoint else checkpoint
+    # Remap fc keys if model uses Sequential wrapper
+    if "fc.weight" in state_dict and "fc.1.weight" not in state_dict:
+        state_dict["fc.1.weight"] = state_dict.pop("fc.weight")
+        state_dict["fc.1.bias"] = state_dict.pop("fc.bias")
     model.load_state_dict(state_dict)
     
     model.eval()
